@@ -1,0 +1,48 @@
+{
+  "supplier_id": 4,
+  "supplier_name": "TYNA",
+  "scraping_strategy": "api",
+  "api_config": {
+    "base_url": "https://www.tyna.com.ar/api/products/get_products.php",
+    "method": "POST",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:144.0) Gecko/20100101 Firefox/144.0",
+      "Accept": "*/*",
+      "Accept-Language": "en-US,en;q=0.5",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "X-Requested-With": "XMLHttpRequest",
+      "Origin": "https://www.tyna.com.ar",
+      "Referer": "https://www.tyna.com.ar/productos/b/categoria/003",
+      "Sec-Fetch-Dest": "empty",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Site": "same-origin"
+    },
+    "timeout": 20,
+    "pagination": {
+      "start_param": "start",
+      "limit_param": "limit",
+      "limit_value": 100,
+      "initial_start": 0
+    }
+  },
+  "subcategories": [
+    {
+      "id": "2310",
+      "name": "Aceites",
+      "category": "003"
+    },
+    {
+      "id": "2349",
+      "name": "Aderezos",
+      "category": "003"
+    }
+  ],
+  "data_mapping": {
+    "name": "data.titulo",
+    "price": "data.precio_final",
+    "image": "images[0].url",
+    "code": "data.cod_producto",
+    "stock": "data.stock"
+  }
+}

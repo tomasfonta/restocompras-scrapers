@@ -1,0 +1,23 @@
+{
+  "supplier_id": 1,
+  "supplier_name": "Green Shop",
+  "scraping_strategy": "requests",
+  "urls": [
+    "https://greenshop.ar/categoria-producto/frutas/todas-las-frutas/",
+    "https://greenshop.ar/categoria-producto/frutossecos/",
+    "https://greenshop.ar/categoria-producto/vegetales/",
+    "https://greenshop.ar/categoria-producto/almacen/",
+    "https://greenshop.ar/categoria-producto/quesos/",
+    "https://greenshop.ar/categoria-producto/condimentosyespecias/"
+  ],
+  "selectors": {
+    "product_list": ".product-small",
+    "title": ".product-title a",
+    "price": ".price .amount, .price bdi",
+    "status": ".out-of-stock-label",
+    "image": ".box-image img"
+  },
+  "strategy_config": {
+    "timeout": 15
+  }
+}

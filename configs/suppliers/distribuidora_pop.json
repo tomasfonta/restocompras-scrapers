@@ -1,0 +1,17 @@
+{
+  "supplier_id": 1,
+  "supplier_name": "Distribuidora Pop",
+  "scraping_strategy": "requests",
+  "urls": [
+    "https://www.distribuidorapop.com.ar/producto-categoria/condimento/"
+  ],
+  "selectors": {
+    "product_list": ".product",
+    "title": ".woocommerce-loop-product__title",
+    "price": ".price .amount, .price bdi",
+    "image": "img.attachment-woocommerce_thumbnail"
+  },
+  "strategy_config": {
+    "timeout": 15
+  }
+}

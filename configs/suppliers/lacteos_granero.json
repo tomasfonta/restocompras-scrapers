@@ -1,0 +1,20 @@
+{
+  "supplier_id": 1,
+  "supplier_name": "Lácteos Garnero",
+  "scraping_strategy": "selenium",
+  "urls": [
+    "https://lacteos-garnero-rosario.callbell.shop/"
+  ],
+  "selectors": {
+    "product_list": ".product",
+    "title": ".product__details__top__name",
+    "price": ".product__details__price--legacy__current--legacy",
+    "image": ".image-gallery-image"
+  },
+  "strategy_config": {
+    "headless": true,
+    "wait_time": 30,
+    "scroll_attempts": 3,
+    "scroll_delay": 2
+  }
+}
