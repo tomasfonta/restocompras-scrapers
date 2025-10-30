@@ -116,7 +116,9 @@ class GreenShopScraper(ScraperBase):
         price_tag = item.select_one(price_selector)
         price_text = price_tag.text.strip() if price_tag else "$0"
         
-        price, _ = self.parser.clean_price(price_text)
+        # Clean and convert price using custom format from config
+        price_format = self.config.get('price_format', {})
+        price, _ = self.parser.clean_price(price_text, price_format)
         
         if price == 0.0:
             return None

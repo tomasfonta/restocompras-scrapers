@@ -57,6 +57,46 @@ class ConfigLoader:
         self.logger.info("API config loaded successfully")
         return config
     
+    def save_api_config(self, config: Dict[str, Any], config_file: str = 'api_config.json') -> None:
+        """
+        Save API configuration to file.
+        
+        Args:
+            config: Configuration dictionary to save
+            config_file: Name of API config file
+        """
+        filepath = os.path.join(self.config_dir, config_file)
+        
+        self.logger.info(f"Saving API config to {filepath}")
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        
+        self.logger.info("API config saved successfully")
+    
+    def update_auth_token(self, new_token: str, config_file: str = 'api_config.json') -> None:
+        """
+        Update just the auth_token in the API config file.
+        
+        Args:
+            new_token: New JWT token
+            config_file: Name of API config file
+        """
+        filepath = os.path.join(self.config_dir, config_file)
+        
+        # Load current config
+        with open(filepath, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        
+        # Update token
+        config['auth_token'] = new_token
+        
+        # Save back
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        
+        self.logger.info(f"Auth token updated in {filepath}")
+    
     def load_supplier_config(self, supplier_name: str) -> Dict[str, Any]:
         """
         Load supplier-specific configuration.
@@ -80,14 +120,16 @@ class ConfigLoader:
         with open(filepath, 'r', encoding='utf-8') as f:
             config = json.load(f)
         
-        # Validate required fields
-        required_fields = ['supplier_id', 'supplier_name', 'scraping_strategy']
+        # Validate required fields (supplier_id and supplier_name removed - now from backend)
+        required_fields = ['scraping_strategy']
         missing = [field for field in required_fields if field not in config]
         
         if missing:
             raise ValueError(f"Supplier config missing required fields: {missing}")
         
-        self.logger.info(f"Supplier config loaded for {config['supplier_name']}")
+        # Log loading (supplier_name might not exist in config anymore)
+        supplier_name_display = config.get('supplier_name', supplier_name)
+        self.logger.info(f"Supplier config loaded for {supplier_name_display}")
         return config
     
     def list_suppliers(self) -> list:

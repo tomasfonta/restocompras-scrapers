@@ -1,0 +1,40 @@
+{
+    "scraping_strategy": "selenium",
+    "urls": [
+        "https://laduvalina.com.ar/dietetica/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/2/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/3/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/4/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/5/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/6/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/7/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/8/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/9/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/10/?orderby=popularity",
+        "https://laduvalina.com.ar/dietetica/page/11/?orderby=popularity",
+        "https://laduvalina.com.ar/cereales-general/arroz/?orderby=popularity",
+        "https://laduvalina.com.ar/cereales-general/arroz/page/2/?orderby=popularity",
+        "https://laduvalina.com.ar/congelados/helados/?orderby=popularity",
+        "https://laduvalina.com.ar/congelados/helados/page/2/?orderby=popularity"
+  
+    ],
+    "selectors": {
+        "product_list": ".product",
+        "title": ".woocommerce-loop-product__title, h2.woocommerce-loop-product__title",
+        "price": ".price",
+        "image": "img"
+    },
+    "strategy_config": {
+        "headless": true,
+        "wait_time": 10
+    },
+    "price_format": {
+        "thousands_separator": ".",
+        "decimal_separator": "",
+        "description": "Format: 50.000 -> 50000.00"
+    },
+    "credentials": {
+        "name": "laduvalina@restocompras.com",
+        "password": "123123"
+    }
+}

@@ -1,6 +1,4 @@
 {
-  "supplier_id": 4,
-  "supplier_name": "TYNA",
   "scraping_strategy": "api",
   "api_config": {
     "base_url": "https://www.tyna.com.ar/api/products/get_products.php",
@@ -44,5 +42,14 @@
     "image": "images[0].url",
     "code": "data.cod_producto",
     "stock": "data.stock"
+  },
+  "credentials": {
+    "name": "tyna@restocompras.com",
+    "password": "123123"
+  },
+  "price_format": {
+    "thousands_separator": "",
+    "decimal_separator": ".",
+    "description": "Standard Argentine format: 1400.00 -> 1400.00"
   }
 }

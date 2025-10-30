@@ -76,30 +76,53 @@ class DataParser:
         return name, quantity, unit
     
     @staticmethod
-    def clean_price(price_text: str) -> Tuple[float, str]:
+    def clean_price(price_text: str, price_format: Dict[str, str] = None) -> Tuple[float, str]:
         """
-        Clean and parse price text.
+        Clean and parse price text with custom format support.
         
-        Removes currency symbols and normalizes decimal separators.
+        Removes currency symbols and normalizes decimal separators based on
+        the provided price format configuration.
         
         Args:
-            price_text: Raw price text (e.g., "$1.234,56", "US$ 1234.56")
+            price_text: Raw price text (e.g., "$1.234,56", "1.400", "1400,00")
+            price_format: Optional dict with 'thousands_separator' and 'decimal_separator' keys
+                         If None, uses default format (thousands='.', decimal=',')
             
         Returns:
             Tuple of (numeric_price as float, formatted_price as string)
+            
+        Examples:
+            # Default format (thousands='.', decimal=',')
+            clean_price("$1.234,56") -> (1234.56, "1234.56")
+            
+            # Green Shop format (thousands='.', no decimal)
+            clean_price("1.400", {"thousands_separator": ".", "decimal_separator": ""}) -> (1400.0, "1400.00")
+            
+            # Piala format (thousands='.', decimal=',')
+            clean_price("1.400,00", {"thousands_separator": ".", "decimal_separator": ","}) -> (1400.0, "1400.00")
         """
-        # Remove currency symbols and spaces
-        cleaned = str(price_text).replace('$', '').replace('US$', '').strip()
+        # Remove currency symbols and extra spaces
+        cleaned = str(price_text).replace('$', '').replace('US$', '').replace('AR$', '').strip()
         
-        # Normalize decimal separators
-        # Assume format: thousands separator = '.', decimal = ','
-        # Or no separator and decimal = '.'
-        cleaned = cleaned.replace('.', '').replace(',', '.')
+        # Get format configuration or use defaults
+        if price_format is None:
+            price_format = {}
+        
+        thousands_sep = price_format.get('thousands_separator', '.')
+        decimal_sep = price_format.get('decimal_separator', ',')
+        
+        # Remove thousands separator
+        if thousands_sep:
+            cleaned = cleaned.replace(thousands_sep, '')
+        
+        # Replace decimal separator with standard '.'
+        if decimal_sep and decimal_sep != '.':
+            cleaned = cleaned.replace(decimal_sep, '.')
         
         try:
             numeric_price = float(cleaned)
-            # Return as int string for display (no decimals)
-            formatted_price = str(int(numeric_price))
+            # Format with 2 decimal places
+            formatted_price = f"{numeric_price:.2f}"
             return numeric_price, formatted_price
         except ValueError:
             return 0.0, price_text.strip()

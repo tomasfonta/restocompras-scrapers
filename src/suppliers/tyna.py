@@ -7,6 +7,7 @@ from typing import List, Dict
 from urllib.parse import urlencode
 
 from ..core.scraper_base import ScraperBase
+from ..core.parser import DataParser
 
 
 class TYNAScraper(ScraperBase):
@@ -46,6 +47,9 @@ class TYNAScraper(ScraperBase):
         
         # Data mapping for extracting fields from response
         self.data_mapping = config.get('data_mapping', {})
+        
+        # Initialize parser
+        self.parser = DataParser()
         
         # Create session
         self.session = requests.Session()
@@ -182,8 +186,10 @@ class TYNAScraper(ScraperBase):
         
         # Extract price (precio_final is the final price)
         price_str = data.get('precio_final', data.get('precio', '0'))
+        price_format = self.config.get('price_format', {})
         try:
-            price = float(price_str)
+            # Use clean_price for consistent price parsing
+            price, _ = self.parser.clean_price(str(price_str), price_format)
         except (ValueError, TypeError):
             self.logger.warning(f"Invalid price for product {title}: {price_str}")
             price = 0.0
@@ -204,10 +210,13 @@ class TYNAScraper(ScraperBase):
         
         product = {
             'name': parsed_data.get('name', title),
+            'brand': self.config.get('supplier_name', 'TYNA'),
+            'description': parsed_data.get('name', title),
             'price': price,
             'quantity': parsed_data.get('quantity', 1),
             'unit': parsed_data.get('unit', 'UNIT'),
             'image': image_url,
+            'supplierId': self.config.get('supplier_id', 0),
             'code': code,
             'stock': stock
         }
@@ -254,20 +263,30 @@ class TYNAScraper(ScraperBase):
                         # Extract unit if present
                         if len(tokens) >= 2:
                             unit = tokens[1].upper()
+
+                            unit = unit.replace('.', '')
                             
                             # Normalize units
                             unit_mapping = {
                                 'LTS': 'L',
                                 'LT': 'L',
+                                'LITRO': 'L',
+                                'L': 'L',
                                 'LITROS': 'L',
                                 'ML': 'ML',
+                                'ML.': 'ML',
                                 'CC': 'ML',
+                                'CC.': 'ML',
                                 'GR': 'G',
+                                'GR.': 'G',
                                 'GRAMOS': 'G',
                                 'KG': 'KG',
+                                'K': 'KG',
+                                'KG.': 'KG',
                                 'KILOS': 'KG',
                                 'UN': 'UNIT',
-                                'U': 'UNIT'
+                                'UN.': 'UNIT',
+                                'U': 'UNIT',
                             }
                             
                             result['unit'] = unit_mapping.get(unit, unit)

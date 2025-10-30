@@ -1,6 +1,4 @@
 {
-  "supplier_id": 1,
-  "supplier_name": "Distribuidora Pop",
   "scraping_strategy": "requests",
   "urls": [
     "https://www.distribuidorapop.com.ar/producto-categoria/condimento/"
@@ -13,5 +11,14 @@
   },
   "strategy_config": {
     "timeout": 15
+  },
+  "price_format": {
+    "thousands_separator": ",",
+    "decimal_separator": "",
+    "description": "Format: 1,400 -> 1400.00"
+  },
+  "credentials": {
+    "name": "distribuidorapop@restocompras.com",
+    "password": "123123"
   }
 }

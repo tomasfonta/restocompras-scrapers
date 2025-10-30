@@ -1,0 +1,30 @@
+{
+  "scraping_strategy": "requests",
+  "urls": [
+    "https://www.piala.com.ar/productos/",
+    "https://www.piala.com.ar/productos/page/2/",
+    "https://www.piala.com.ar/productos/page/3/",
+    "https://www.piala.com.ar/productos/page/4/",
+    "https://www.piala.com.ar/productos/page/5/",
+    "https://www.piala.com.ar/productos/page/6/",
+    "https://www.piala.com.ar/productos/page/7/"
+  ],
+  "selectors": {
+    "product_list": ".jet-listing-grid__item",
+    "title": "h3.elementor-heading-title a",
+    "price": ".woocommerce-Price-amount",
+    "image": ".elementor-widget-image img"
+  },
+  "strategy_config": {
+    "timeout": 15
+  },
+  "price_format": {
+    "thousands_separator": "",
+    "decimal_separator": ".",
+    "description": "Format: 1400.00 -> 1400.00"
+  },
+  "credentials": {
+    "name": "lapiala@restocompras.com",
+    "password": "123123"
+  }
+}

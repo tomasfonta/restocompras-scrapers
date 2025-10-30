@@ -1,0 +1,24 @@
+{
+    "scraping_strategy": "requests",
+    "urls": [
+        "https://labebidadetusfiestas.com.ar/3-vinos?resultsPerPage=99999&q=Disponibilidad-En+stock"
+    ],
+    "selectors": {
+        "product_list": ".product-miniature",
+        "title": ".product-title a",
+        "price": ".product-price",
+        "image": "img"
+    },
+    "strategy_config": {
+        "timeout": 20
+    },
+    "price_format": {
+        "thousands_separator": ".",
+        "decimal_separator": ",",
+        "description": "Format: 6.235,23 -> 6235.23"
+    },
+    "credentials": {
+        "name": "labebidadetusfiestas@restocompras.com",
+        "password": "123123"
+    }
+}

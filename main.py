@@ -1,12 +1,13 @@
 """Main entry point for the restoCompras scraper system."""
 
 import argparse
+import logging
 import sys
 from typing import Optional
 
 from src.config import ConfigLoader
 from src.core import APIClient, DataExporter
-from src.suppliers import GreenShopScraper, LacteosGraneroScraper, DistribuidoraPopScraper, TYNAScraper
+from src.suppliers import GreenShopScraper, LacteosGraneroScraper, DistribuidoraPopScraper, TYNAScraper, PialaScraper, DistribuidoraDeMarchiScraper, LaduvalinaScraper, LaBebidaDeTusFiestasScraper
 from src.utils import setup_logger
 
 
@@ -16,6 +17,10 @@ SCRAPER_REGISTRY = {
     'lacteos_granero': LacteosGraneroScraper,
     'distribuidora_pop': DistribuidoraPopScraper,
     'tyna': TYNAScraper,
+    'piala': PialaScraper,
+    'distribuidora_demarchi': DistribuidoraDeMarchiScraper,
+    'laduvalina': LaduvalinaScraper,
+    'labebidadetusfiestas': LaBebidaDeTusFiestasScraper,
 }
 
 
@@ -33,8 +38,8 @@ def run_scraper(supplier_name: str, config_dir: str = 'configs',
     Returns:
         True if successful, False otherwise
     """
-    # Set up logging
-    logger = setup_logger(log_dir=log_dir)
+    # Set up logging with DEBUG level for file handler
+    logger = setup_logger(log_dir=log_dir, level=logging.DEBUG)
     
     try:
         # Load configurations
@@ -46,8 +51,81 @@ def run_scraper(supplier_name: str, config_dir: str = 'configs',
         api_config = config_loader.load_api_config()
         api_client = APIClient(api_config)
         
-        # Load supplier config
+        # Load supplier config first to check for supplier-specific credentials
         supplier_config = config_loader.load_supplier_config(supplier_name)
+        
+        # Perform login to get fresh token
+        logger.info("="*70)
+        logger.info("AUTHENTICATING WITH BACKEND API")
+        logger.info("="*70)
+        
+        token = None
+        
+        # Check if supplier has its own credentials
+        supplier_credentials = supplier_config.get('credentials')
+
+        logger.info(f"Supplier credentials: {supplier_credentials}")
+
+        email = supplier_config.get('credentials').get('name');
+        password = supplier_config.get('credentials').get('password');
+
+        logger.info(f"Using supplier name: {email} {password}")
+        
+        if email and password:
+            logger.info(f"Using supplier-specific credentials for {supplier_name}")
+      
+            token = api_client.login_with_credentials(
+                supplier_credentials['name'],
+                supplier_credentials['password']
+            )
+        
+        if token:
+            # Update config file with new token
+            config_loader.update_auth_token(token)
+            logger.info("Authentication successful - token updated in config")
+            
+            # Fetch supplier details from backend
+            if email:
+                logger.info("="*70)
+                logger.info("FETCHING SUPPLIER DETAILS")
+                logger.info("="*70)
+                
+                supplier_details = api_client.fetch_supplier_details(email=email)
+                
+                if supplier_details:
+                    # Extract supplier information from backend
+                    backend_supplier_id = supplier_details.get('id') or supplier_details.get('supplierId')
+                    backend_supplier_name = supplier_details.get('name') or supplier_details.get('supplierName')
+                    
+                    if backend_supplier_id:
+                        logger.info(f"Backend supplier ID: {backend_supplier_id}")
+                        supplier_config['supplier_id'] = backend_supplier_id
+                    else:
+                        logger.error("Supplier details retrieved but no ID found. Aborting.")
+                        return False
+                    
+                    if backend_supplier_name:
+                        logger.info(f"Backend supplier name: {backend_supplier_name}")
+                        supplier_config['supplier_name'] = backend_supplier_name
+                    else:
+                        # Fallback to formatted supplier_name parameter if no name in backend
+                        supplier_config['supplier_name'] = email
+                    
+                    # Store full supplier details for potential future use
+                    supplier_config['supplier_details'] = supplier_details
+                else:
+                    logger.error(f"Could not fetch supplier details for {email}. Aborting.")
+                    logger.error("Supplier ID and name are required from backend.")
+                    return False
+            else:
+                logger.error("No supplier email available for fetching details. Aborting.")
+                return False
+        else:
+            logger.error("Authentication failed - proceeding with existing token")
+            # If login fails and there's no token, we should abort
+            if not api_config.get('auth_token'):
+                logger.error("No valid authentication token available. Aborting.")
+                return False
         
         # Get appropriate scraper class
         scraper_class = SCRAPER_REGISTRY.get(supplier_name)

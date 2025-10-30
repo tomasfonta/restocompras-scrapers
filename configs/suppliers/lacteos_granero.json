@@ -1,6 +1,4 @@
 {
-  "supplier_id": 1,
-  "supplier_name": "Lácteos Garnero",
   "scraping_strategy": "selenium",
   "urls": [
     "https://lacteos-garnero-rosario.callbell.shop/"
@@ -16,5 +14,14 @@
     "wait_time": 30,
     "scroll_attempts": 3,
     "scroll_delay": 2
+  },
+  "price_format": {
+    "thousands_separator": ".",
+    "decimal_separator": ",",
+    "description": "Format: 1.400,00 -> 1400.00"
+  },
+  "credentials": {
+    "name": "lacteosgranero@restocompras.com",
+    "password": "123123"
   }
 }

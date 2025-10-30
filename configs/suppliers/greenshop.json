@@ -1,6 +1,4 @@
 {
-  "supplier_id": 1,
-  "supplier_name": "Green Shop",
   "scraping_strategy": "requests",
   "urls": [
     "https://greenshop.ar/categoria-producto/frutas/todas-las-frutas/",
@@ -19,5 +17,14 @@
   },
   "strategy_config": {
     "timeout": 15
+  },
+  "price_format": {
+    "thousands_separator": ".",
+    "decimal_separator": "",
+    "description": "Format: 1.400 -> 1400.00"
+  },
+  "credentials": {
+    "name": "greenshop@restocompras.com",
+    "password": "123123"
   }
 }
