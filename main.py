@@ -7,7 +7,12 @@ from typing import Optional
 
 from src.config import ConfigLoader
 from src.core import APIClient, DataExporter
-from src.suppliers import GreenShopScraper, LacteosGraneroScraper, DistribuidoraPopScraper, TYNAScraper, PialaScraper, DistribuidoraDeMarchiScraper, LaduvalinaScraper, LaBebidaDeTusFiestasScraper
+from src.suppliers import (
+    GreenShopScraper, LacteosGraneroScraper, DistribuidoraPopScraper, 
+    TYNAScraper, PialaScraper, DistribuidoraDeMarchiScraper, 
+    LaduvalinaScraper, LaBebidaDeTusFiestasScraper,
+    IrlandaScraper, ElChanarCarnesScraper
+)
 from src.utils import setup_logger
 
 
@@ -21,6 +26,8 @@ SCRAPER_REGISTRY = {
     'distribuidora_demarchi': DistribuidoraDeMarchiScraper,
     'laduvalina': LaduvalinaScraper,
     'labebidadetusfiestas': LaBebidaDeTusFiestasScraper,
+    'irlanda': IrlandaScraper,
+    'el_chanar_carnes': ElChanarCarnesScraper,
 }
 
 

@@ -1,6 +1,6 @@
 {
   "base_url": "http://localhost:8080",
-  "auth_token": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI5IiwiYXV0aG9yaXRpZXMiOlt7ImF1dGhvcml0eSI6IlJFQUQifSx7ImF1dGhvcml0eSI6IkRFTEVURSJ9LHsiYXV0aG9yaXR5IjoiQ1JFQVRFIn0seyJhdXRob3JpdHkiOiJVUERBVEUifV0sImlhdCI6MTc2MjA4MDM3NSwiZXhwIjoxNzYyMTI0NDAwfQ.msz1d84e8Ps9H8asY1hKyXi00u2yzc6kcCRGom_WJyJMRTNi4BOqkp1KFlqs7_O5VY3vV6E6DczItSDr3ClEvA",
+  "auth_token": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiYXV0aG9yaXRpZXMiOlt7ImF1dGhvcml0eSI6IlJFQUQifSx7ImF1dGhvcml0eSI6IkRFTEVURSJ9LHsiYXV0aG9yaXR5IjoiQ1JFQVRFIn0seyJhdXRob3JpdHkiOiJVUERBVEUifV0sImlhdCI6MTc2MjA4MzA1NiwiZXhwIjoxNzYyMTI4MDAwfQ.6SIRECsz6L__2AMTlK7-KOl-l91BEVFZ0xmclX1Qys_C-m_NA4dbgiW9x8TDAjEQJT1WxdUF-FJpx3l_DHrDAw",
   "login_endpoint": "/login",
   "search_endpoint": "/api/products/search/best-match",
   "item_endpoint": "/api/item",

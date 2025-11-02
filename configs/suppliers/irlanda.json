@@ -1,0 +1,33 @@
+{
+  "supplier_id": 5,
+  "supplier_name": "Irlanda",
+  "scraping_strategy": "pdf",
+  "credentials": {
+    "name": "",
+    "password": ""
+  },
+  "file_config": {
+    "filename": "LISTAS_IRLANDA.pdf",
+    "input_dir": "input",
+    "strategy_type": "pdf"
+  },
+  "pdf_config": {
+    "table_settings": {
+      "vertical_strategy": "text",
+      "horizontal_strategy": "text"
+    },
+    "page_range": null,
+    "text_mode": true
+  },
+  "column_mapping": {
+    "name": ["producto", "description", "descripcion", "item", "articulo"],
+    "price": ["precio", "price", "importe", "valor"],
+    "code": ["codigo", "code", "cod", "sku"],
+    "quantity": ["cantidad", "cant", "qty"],
+    "unit": ["unidad", "unit", "medida"]
+  },
+  "price_format": {
+    "thousands_separator": ".",
+    "decimal_separator": ","
+  }
+}

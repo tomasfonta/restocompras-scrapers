@@ -555,6 +555,7 @@ done
 
 ### Available Suppliers
 
+**Web Scrapers (HTML-based):**
 - ✅ **greenshop** - Green Shop (Requests strategy)
 - ✅ **lacteos_granero** - Lácteos Granero (Selenium strategy)
 - ✅ **distribuidora_pop** - Distribuidora Pop (Requests strategy)
@@ -563,6 +564,10 @@ done
 - ✅ **piala** - Piala (Requests strategy)
 - ✅ **distribuidora_demarchi** - Distribuidora De Marchi (Requests strategy)
 - ✅ **laduvalina** - La Duvalina (Requests strategy)
+
+**File-Based Scrapers:**
+- ✅ **irlanda** - Irlanda (PDF price list strategy)
+- ✅ **el_chanar_carnes** - El Chañar Carnes (Excel price list strategy)
 
 ### Scheduling Automated Runs
 
@@ -583,7 +588,256 @@ Or run individual supplier:
 
 ---
 
-## 🔧 Troubleshooting
+## � Testing File-Based Providers
+
+The framework supports file-based scrapers for PDF and Excel price lists, in addition to web scraping.
+
+### PDF Price Lists (Irlanda)
+
+**Use Case**: Suppliers that provide price lists as PDF documents.
+
+#### Setup
+1. Place PDF file in `input/` directory:
+   ```bash
+   cp LISTAS_IRLANDA.pdf input/
+   ```
+
+2. Configuration (`configs/suppliers/irlanda.json`):
+   ```json
+   {
+     "supplier_id": 5,
+     "supplier_name": "Irlanda",
+     "scraping_strategy": "pdf",
+     "credentials": {
+       "name": "irlanda@restocompras.com",
+       "password": "password"
+     },
+     "file_config": {
+       "filename": "LISTAS_IRLANDA.pdf",
+       "input_dir": "input",
+       "strategy_type": "pdf"
+     },
+     "pdf_config": {
+       "text_mode": true,
+       "table_settings": {
+         "vertical_strategy": "text",
+         "horizontal_strategy": "text"
+       }
+     }
+   }
+   ```
+
+#### Run PDF Scraper
+```bash
+# Development
+python3 main.py irlanda --env dev
+
+# Production
+python3 main.py irlanda --env prod
+```
+
+#### Expected Output
+```
+INFO - Extracted 834 raw records from PDF
+INFO - Processing 834 raw records
+INFO - Successfully extracted 625 products from PDF
+INFO - ✅ Successfully posted 'SODA SIFON SOCIAL' (Product ID: 113, Supplier ID: 5)
+INFO - Export file: output/irlanda_export_20251102_111344.xlsx
+```
+
+#### PDF Format Support
+- **Text mode**: Line-by-line extraction with regex patterns
+  - Format: `CODE DESCRIPTION........ PRICE`
+  - Example: `0101137 SODA SIFON SOCIAL 2L.................. 5700.00`
+- **Table mode**: Structured table extraction using pdfplumber
+- Handles multi-page PDFs automatically
+
+### Excel Price Lists (El Chañar Carnes)
+
+**Use Case**: Suppliers that provide price lists as Excel spreadsheets.
+
+#### Setup
+1. Place Excel file in `input/` directory:
+   ```bash
+   cp "LISTA DE PRECIOS WHATSAPP Y OTROS.xlsx" input/
+   ```
+
+2. Configuration (`configs/suppliers/el_chanar_carnes.json`):
+   ```json
+   {
+     "supplier_id": 6,
+     "supplier_name": "El Chañar carnes",
+     "scraping_strategy": "excel",
+     "credentials": {
+       "name": "elchanar@restocompras.com",
+       "password": "password"
+     },
+     "file_config": {
+       "filename": "LISTA DE PRECIOS WHATSAPP Y OTROS.xlsx",
+       "input_dir": "input",
+       "strategy_type": "excel"
+     },
+     "excel_config": {
+       "sheet_name": 0,
+       "header_row": null,
+       "skip_rows": 3,
+       "use_pandas": true
+     },
+     "column_mapping": {
+       "name_columns": [1, 5],
+       "price_columns": [2, 6],
+       "process_mode": "paired"
+     }
+   }
+   ```
+
+#### Run Excel Scraper
+```bash
+# Development
+python3 main.py el_chanar_carnes --env dev
+
+# Production
+python3 main.py el_chanar_carnes --env prod
+```
+
+#### Expected Output
+```
+INFO - Extracted 150 raw records from Excel
+INFO - Processing 150 raw records in paired mode
+INFO - Successfully extracted 75 products from Excel
+INFO - ✅ Successfully posted 'Bife s/lomo' (Product ID: 1, Supplier ID: 6)
+INFO - Export file: output/el_chañar_carnes_export_20251102_111358.xlsx
+```
+
+#### Excel Layout Support
+**Paired Columns Mode** (Name1|Price1|Name2|Price2):
+```
+| Product A | $100 | Product C | $300 |
+| Product B | $200 | Product D | $400 |
+```
+
+**Single Column Mode** (Name|Price):
+```
+| Product A | $100 |
+| Product B | $200 |
+```
+
+Configure via `process_mode`: `"paired"` or `"single"`
+
+### Adding New File-Based Suppliers
+
+#### For PDF Price Lists
+
+1. **Create config** (`configs/suppliers/supplier_name.json`):
+   ```json
+   {
+     "supplier_id": 7,
+     "supplier_name": "Supplier Name",
+     "scraping_strategy": "pdf",
+     "credentials": {
+       "name": "supplier@restocompras.com",
+       "password": "password"
+     },
+     "file_config": {
+       "filename": "pricelist.pdf",
+       "input_dir": "input",
+       "strategy_type": "pdf"
+     },
+     "pdf_config": {
+       "text_mode": true
+     }
+   }
+   ```
+
+2. **Place PDF file**: `input/pricelist.pdf`
+
+3. **Test**:
+   ```bash
+   python3 main.py supplier_name --env dev
+   ```
+
+#### For Excel Price Lists
+
+1. **Create config** (`configs/suppliers/supplier_name.json`):
+   ```json
+   {
+     "supplier_id": 8,
+     "supplier_name": "Supplier Name",
+     "scraping_strategy": "excel",
+     "credentials": {
+       "name": "supplier@restocompras.com",
+       "password": "password"
+     },
+     "file_config": {
+       "filename": "pricelist.xlsx",
+       "input_dir": "input",
+       "strategy_type": "excel"
+     },
+     "excel_config": {
+       "sheet_name": 0,
+       "skip_rows": 0,
+       "use_pandas": true
+     },
+     "column_mapping": {
+       "name_columns": [0],
+       "price_columns": [1],
+       "process_mode": "single"
+     }
+   }
+   ```
+
+2. **Place Excel file**: `input/pricelist.xlsx`
+
+3. **Test**:
+   ```bash
+   python3 main.py supplier_name --env dev
+   ```
+
+### File-Based Architecture
+
+```
+┌─────────────────┐
+│  FileStrategy   │  Abstract base for file-based scraping
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    ▼         ▼
+┌─────────┐ ┌──────────────┐
+│  PDF    │ │    Excel     │
+│Strategy │ │  Strategy    │
+└─────────┘ └──────────────┘
+    │              │
+    ▼              ▼
+┌─────────┐ ┌──────────────────┐
+│ Irlanda │ │ El Chañar Carnes │
+│ Scraper │ │    Scraper       │
+└─────────┘ └──────────────────┘
+```
+
+### Dependencies for File Processing
+
+```bash
+# PDF processing
+pip install pdfplumber>=0.10.0
+
+# Excel processing (already included)
+pip install pandas>=2.1.0
+pip install openpyxl>=3.1.0
+```
+
+### Troubleshooting File-Based Scrapers
+
+| Issue | Solution |
+|-------|----------|
+| **File not found** | Ensure file is in `input/` directory with exact filename from config |
+| **Empty PDF extraction** | Try switching `text_mode` between `true` and `false` |
+| **Excel column errors** | Verify column indices in `name_columns` and `price_columns` (0-based) |
+| **No products extracted** | Check `skip_rows` setting, inspect file structure manually |
+| **Price parsing errors** | Update `price_format` in config (decimal/thousands separators) |
+
+---
+
+## �🔧 Troubleshooting
 
 ### Common Issues
 

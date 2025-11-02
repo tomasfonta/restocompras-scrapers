@@ -1,0 +1,29 @@
+{
+  "supplier_id": 6,
+  "supplier_name": "El Chañar carnes",
+  "scraping_strategy": "excel",
+  "credentials": {
+    "name": "",
+    "password": ""
+  },
+  "file_config": {
+    "filename": "LISTAS_EL_CHANAR_CARNES.xlsx",
+    "input_dir": "input",
+    "strategy_type": "excel"
+  },
+  "excel_config": {
+    "sheet_name": 0,
+    "header_row": null,
+    "skip_rows": 3,
+    "use_pandas": true
+  },
+  "column_mapping": {
+    "name_columns": [1, 5],
+    "price_columns": [2, 6],
+    "process_mode": "paired"
+  },
+  "price_format": {
+    "thousands_separator": "",
+    "decimal_separator": "."
+  }
+}

@@ -1,10 +1,10 @@
 {
-    "base_url": "https://restocompras2.onrender.com",
-    "auth_token": "",
-    "login_endpoint": "/login",
-    "search_endpoint": "/api/products/search/best-match",
-    "item_endpoint": "/api/item",
-    "supplier_search_endpoint": "/api/suppliers/search",
-    "supplier_delete_endpoint": "/api/item/supplier/{supplier_id}",
-    "timeout": 30
+  "base_url": "https://restocompras2.onrender.com",
+  "auth_token": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiYXV0aG9yaXRpZXMiOlt7ImF1dGhvcml0eSI6IlJFQUQifSx7ImF1dGhvcml0eSI6IkRFTEVURSJ9LHsiYXV0aG9yaXR5IjoiQ1JFQVRFIn0seyJhdXRob3JpdHkiOiJVUERBVEUifV0sImlhdCI6MTc2MjA4MjQ4MywiZXhwIjoxNzYyMTI4MDAwfQ.44YbzqN1-76_FDFj2Ju5zCRABPnj-pKX81_UYj6iSaa3JzBGt0wCBX5T5oyeShMnZgfFBAo6YIOk3Ewf37_W5g",
+  "login_endpoint": "/login",
+  "search_endpoint": "/api/products/search/best-match",
+  "item_endpoint": "/api/item",
+  "supplier_search_endpoint": "/api/suppliers/search",
+  "supplier_delete_endpoint": "/api/item/supplier/{supplier_id}",
+  "timeout": 30
 }
