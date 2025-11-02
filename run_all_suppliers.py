@@ -6,6 +6,7 @@ This script runs scrapers for all available suppliers sequentially
 and provides a detailed summary of the results.
 """
 
+import argparse
 import subprocess
 import sys
 from datetime import datetime
@@ -32,25 +33,26 @@ SUPPLIERS = [
 ]
 
 
-def run_supplier(supplier_name: str) -> bool:
+def run_supplier(supplier_name: str, environment: str = 'dev') -> bool:
     """
     Run scraper for a single supplier.
     
     Args:
         supplier_name: Name of the supplier to scrape
+        environment: Environment to use ('dev' or 'prod')
         
     Returns:
         True if successful, False otherwise
     """
     print()
     print("-" * 71)
-    print(f"{YELLOW}Running scraper for: {supplier_name}{RESET}")
+    print(f"{YELLOW}Running scraper for: {supplier_name} (env: {environment}){RESET}")
     print("-" * 71)
     
     try:
-        # Run the scraper as a subprocess
+        # Run the scraper as a subprocess with environment argument
         result = subprocess.run(
-            ['python3', 'main.py', supplier_name],
+            ['python3', 'main.py', supplier_name, '--env', environment],
             capture_output=False,  # Show output in real-time
             text=True
         )
@@ -70,6 +72,32 @@ def run_supplier(supplier_name: str) -> bool:
 
 def main():
     """Main function to run all suppliers."""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description='Run scrapers for all configured suppliers',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run all suppliers in development environment (localhost)
+  python3 run_all_suppliers.py
+  python3 run_all_suppliers.py --env dev
+  
+  # Run all suppliers in production environment
+  python3 run_all_suppliers.py --env prod
+        """
+    )
+    
+    parser.add_argument(
+        '--env', '--environment',
+        dest='environment',
+        choices=['dev', 'prod'],
+        default='dev',
+        help='Environment to use: dev (localhost) or prod (production server). Default: dev'
+    )
+    
+    args = parser.parse_args()
+    environment = args.environment
+    
     # Track results
     successful_suppliers: List[str] = []
     failed_suppliers: List[str] = []
@@ -78,6 +106,7 @@ def main():
     print("=" * 71)
     print(f"{BLUE}restoCompras Scrapers - Running All Suppliers{RESET}")
     print("=" * 71)
+    print(f"Environment: {YELLOW}{environment.upper()}{RESET}")
     print(f"Total suppliers to scrape: {len(SUPPLIERS)}")
     start_time = datetime.now()
     print(f"Start time: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -85,7 +114,7 @@ def main():
     
     # Run each supplier
     for supplier in SUPPLIERS:
-        success = run_supplier(supplier)
+        success = run_supplier(supplier, environment)
         
         if success:
             successful_suppliers.append(supplier)

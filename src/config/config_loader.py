@@ -13,25 +13,29 @@ class ConfigLoader:
     Handles loading of both API configuration and supplier-specific configs.
     """
     
-    def __init__(self, config_dir: str = 'configs'):
+    def __init__(self, config_dir: str = 'configs', environment: str = 'dev'):
         """
         Initialize config loader.
         
         Args:
             config_dir: Directory containing configuration files
+            environment: Environment to use ('dev' or 'prod'). Default is 'dev'.
         """
         self.config_dir = config_dir
+        self.environment = environment
         self.logger = logging.getLogger(self.__class__.__name__)
         
         # Ensure config directory exists
         os.makedirs(config_dir, exist_ok=True)
+        
+        self.logger.info(f"ConfigLoader initialized for environment: {environment}")
     
-    def load_api_config(self, config_file: str = 'api_config.json') -> Dict[str, Any]:
+    def load_api_config(self, config_file: Optional[str] = None) -> Dict[str, Any]:
         """
-        Load API configuration.
+        Load API configuration based on environment.
         
         Args:
-            config_file: Name of API config file
+            config_file: Specific config file name. If None, uses environment-specific file.
             
         Returns:
             API configuration dictionary
@@ -40,7 +44,17 @@ class ConfigLoader:
             FileNotFoundError: If config file doesn't exist
             json.JSONDecodeError: If config file is invalid JSON
         """
+        # If no specific file provided, use environment-specific config
+        if config_file is None:
+            config_file = f'api_config.{self.environment}.json'
+            
         filepath = os.path.join(self.config_dir, config_file)
+        
+        # Fallback to default api_config.json if environment-specific doesn't exist
+        if not os.path.exists(filepath) and config_file != 'api_config.json':
+            self.logger.warning(f"Environment config {config_file} not found, falling back to api_config.json")
+            config_file = 'api_config.json'
+            filepath = os.path.join(self.config_dir, config_file)
         
         self.logger.info(f"Loading API config from {filepath}")
         
@@ -54,7 +68,7 @@ class ConfigLoader:
         if missing:
             raise ValueError(f"API config missing required fields: {missing}")
         
-        self.logger.info("API config loaded successfully")
+        self.logger.info(f"API config loaded successfully (environment: {self.environment})")
         return config
     
     def save_api_config(self, config: Dict[str, Any], config_file: str = 'api_config.json') -> None:
@@ -74,15 +88,24 @@ class ConfigLoader:
         
         self.logger.info("API config saved successfully")
     
-    def update_auth_token(self, new_token: str, config_file: str = 'api_config.json') -> None:
+    def update_auth_token(self, new_token: str, config_file: Optional[str] = None) -> None:
         """
         Update just the auth_token in the API config file.
         
         Args:
             new_token: New JWT token
-            config_file: Name of API config file
+            config_file: Specific config file name. If None, uses environment-specific file.
         """
+        # If no specific file provided, use environment-specific config
+        if config_file is None:
+            config_file = f'api_config.{self.environment}.json'
+            
         filepath = os.path.join(self.config_dir, config_file)
+        
+        # Fallback to default api_config.json if environment-specific doesn't exist
+        if not os.path.exists(filepath) and config_file != 'api_config.json':
+            config_file = 'api_config.json'
+            filepath = os.path.join(self.config_dir, config_file)
         
         # Load current config
         with open(filepath, 'r', encoding='utf-8') as f:

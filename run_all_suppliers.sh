@@ -10,6 +10,42 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Default environment
+ENVIRONMENT="dev"
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --env|--environment)
+            ENVIRONMENT="$2"
+            if [[ "$ENVIRONMENT" != "dev" && "$ENVIRONMENT" != "prod" ]]; then
+                echo -e "${RED}Error: Environment must be 'dev' or 'prod'${NC}"
+                echo "Usage: $0 [--env {dev|prod}]"
+                exit 1
+            fi
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [--env {dev|prod}]"
+            echo ""
+            echo "Options:"
+            echo "  --env, --environment    Environment to use: dev (localhost) or prod (production). Default: dev"
+            echo "  -h, --help              Show this help message"
+            echo ""
+            echo "Examples:"
+            echo "  $0                    # Run all suppliers in dev environment"
+            echo "  $0 --env dev          # Run all suppliers in dev environment"
+            echo "  $0 --env prod         # Run all suppliers in prod environment"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}Error: Unknown option $1${NC}"
+            echo "Usage: $0 [--env {dev|prod}]"
+            exit 1
+            ;;
+    esac
+done
+
 # List of all suppliers
 SUPPLIERS=("greenshop" "lacteos_granero" "distribuidora_pop" "tyna" "piala" "distribuidora_demarchi" "laduvalina" "labebidadetusfiestas")
 
@@ -25,6 +61,7 @@ FAILED_SUPPLIERS=()
 echo "======================================================================="
 echo -e "${BLUE}restoCompras Scrapers - Running All Suppliers${NC}"
 echo "======================================================================="
+echo -e "Environment: ${YELLOW}${ENVIRONMENT^^}${NC}"
 echo "Total suppliers to scrape: ${TOTAL_COUNT}"
 echo "Start time: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "======================================================================="
@@ -35,11 +72,11 @@ for supplier in "${SUPPLIERS[@]}"
 do
     echo ""
     echo "-----------------------------------------------------------------------"
-    echo -e "${YELLOW}Running scraper for: ${supplier}${NC}"
+    echo -e "${YELLOW}Running scraper for: ${supplier} (env: ${ENVIRONMENT})${NC}"
     echo "-----------------------------------------------------------------------"
     
-    # Run the scraper
-    python3 main.py "$supplier"
+    # Run the scraper with environment argument
+    python3 main.py "$supplier" --env "$ENVIRONMENT"
     EXIT_CODE=$?
     
     # Check if successful

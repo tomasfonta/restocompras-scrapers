@@ -1,0 +1,10 @@
+{
+    "base_url": "https://restocompras2.onrender.com",
+    "auth_token": "",
+    "login_endpoint": "/login",
+    "search_endpoint": "/api/products/search/best-match",
+    "item_endpoint": "/api/item",
+    "supplier_search_endpoint": "/api/suppliers/search",
+    "supplier_delete_endpoint": "/api/item/supplier/{supplier_id}",
+    "timeout": 30
+}

@@ -18,13 +18,19 @@ class DataParser:
         Parse product title into name, quantity, and unit.
         
         Extracts quantity and unit from product titles like:
-        - "Producto 500 gr"
-        - "Producto 2 kilos"
-        - "Producto 1 un."
+        - "Producto 500 gr", "Producto 500g", "Producto 500 gramos"
+        - "Producto 2 kilos", "Producto 2kg", "Producto 2 kg"
+        - "Producto 1 litro", "Producto 1l", "Producto 1 L"
+        - "Producto 500cc", "Producto 500 cc", "Producto 500ml"
+        - "Producto x 1 kg", "Producto x 500g"
+        - "Chipa x 5 kg – Formato mayorista"
+        - "Producto 1 un.", "Producto 1u"
         
         Standardizes units:
-        - gr, un, u, lb → G
-        - kilos, kg → KG
+        - gr, g, gramos, un, u, lb → G
+        - kilos, kilo, kg → KG
+        - litros, litro, l → L
+        - cc, ml, mililitros → ML
         - default → UNIT (quantity = 1)
         
         Args:
@@ -38,37 +44,78 @@ class DataParser:
         # Remove leading 3-digit codes (e.g., "001 Producto")
         name = re.sub(r'^\s*\d{3}\s+', '', name).strip()
         
-        # Match quantity and unit at end of string
-        match = re.search(
-            r'(\d+)\s*(gr|gramos?|kilos?|kg|un\.|u\.|lb)\.?$',
-            name,
-            re.IGNORECASE
-        )
+        # Try to match quantity and unit patterns
+        # First attempt: at the end of string (most common)
+        # Second attempt: followed by dash/hyphen (e.g., "x 5 kg – description")
+        
+        # Pattern with various formats:
+        # - "500 gr", "500gr", "500 g", "500g"
+        # - "x 500 gr", "x 500g" (with optional "x" prefix)
+        # - "1 litro", "1l", "1 L"
+        # - "500cc", "500 cc", "500ml", "500 ml"
+        unit_pattern = r'(?:x\s+)?(\d+(?:[.,]\d+)?)\s*(gr|g|gramos?|kilos?|kilo|kg|litros?|l|cc|ml|mililitros?|un\.|u\.|u|lb)\.?'
+        
+        # Try at end of string first
+        match = re.search(unit_pattern + r'$', name, re.IGNORECASE)
+        
+        # If not found at end, try before dash/hyphen (common in De Marchi format)
+        if not match:
+            match = re.search(unit_pattern + r'\s*[–-]', name, re.IGNORECASE)
+        
+        # If still not found, try anywhere in the string (but prefer first occurrence)
+        if not match:
+            match = re.search(unit_pattern, name, re.IGNORECASE)
         
         quantity = "1"
         unit = "UNIT"
+        matched_text = ""
         
         if match:
-            raw_quantity = match.group(1).strip()
+            raw_quantity = match.group(1).strip().replace(',', '.')
             raw_unit = match.group(2).strip().lower().replace('.', '')
             
+            # Get the full matched text, but strip any trailing dash that might be included
+            # (when matching before a dash, the pattern includes the dash)
+            matched_text = match.group(0).rstrip('–-').strip()
+            
             # Standardize unit
-            if raw_unit in ['gr', 'gramo', 'gramos', 'un', 'u', 'lb']:
+            if raw_unit in ['gr', 'g', 'gramo', 'gramos', 'un', 'u', 'lb']:
                 unit = "G"
             elif raw_unit in ['kilos', 'kilo', 'kg']:
                 unit = "KG"
+            elif raw_unit in ['litros', 'litro', 'l']:
+                unit = "L"
+            elif raw_unit in ['cc', 'ml', 'mililitro', 'mililitros']:
+                unit = "ML"
             else:
                 unit = "UNIT"
             
-            quantity = raw_quantity
+            # Convert quantity to integer if it's a whole number
+            try:
+                quantity_float = float(raw_quantity)
+                if quantity_float.is_integer():
+                    quantity = str(int(quantity_float))
+                else:
+                    quantity = str(quantity_float)
+            except ValueError:
+                quantity = raw_quantity
             
-            # Remove quantity and unit from name
-            name = re.sub(
-                r'\s*(\d+)\s*(gr|gramos?|kilos?|kg|un\.|u\.|lb)\.?$',
-                '',
-                name,
-                flags=re.IGNORECASE
-            ).strip()
+            # Remove the matched unit pattern from name
+            # Check if the matched text is followed by a dash (De Marchi format: "x N unit – description")
+            pattern_with_dash = re.escape(matched_text) + r'\s*[–-]'
+            if re.search(pattern_with_dash, name):
+                # Replace "x N unit" before dash, keeping the dash
+                name = re.sub(pattern_with_dash, ' –', name)
+            else:
+                # Standard removal for end-of-string matches or other positions
+                name = name.replace(matched_text, '')
+            
+            # Normalize only separator dashes (those with spaces), not hyphens in compound words
+            # Only normalize dashes that have at least one space on either side
+            name = re.sub(r'\s+[–-]\s*', ' – ', name)  # Space before dash
+            name = re.sub(r'\s*[–-]\s+', ' – ', name)  # Space after dash
+            name = re.sub(r'\s+', ' ', name)  # Normalize multiple spaces
+            name = name.strip()
         
         # Remove "por kilo" suffix
         name = re.sub(r'\s*por\s*kilo$', '', name, flags=re.IGNORECASE).strip()

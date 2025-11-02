@@ -41,7 +41,66 @@ class DistribuidoraDeMarchiScraper(ScraperBase):
         # Base URL for resolving relative paths
         self.base_url = 'https://www.distribuidorademarchi.com.ar'
     
-    def get_urls(self) -> List[str]:
+    def _parse_demarchi_title(self, title: str) -> tuple:
+        """
+        Parse De Marchi product title to extract name, brand, and full title for units.
+        
+        De Marchi format: "Product Name Brand x 500 g – Description"
+        - Product name: Everything before the last word before 'x'
+        - Brand: Last word before 'x'
+        - Full title: Used for parsing units and quantity
+        
+        Examples:
+            "Aderezo Caesar Abedul x 20 g – Pack x108 unidades"
+            -> name: "Aderezo Caesar", brand: "Abedul"
+            
+            "Aderezo Caesar Abedul x20 g – Pack x108 unidades"
+            -> name: "Aderezo Caesar", brand: "Abedul"
+            
+            "Aderezo Caesar Abedul x – Pack x108 unidades"
+            -> name: "Aderezo Caesar", brand: "Abedul"
+            
+            "Chipa Congelado x 5 kg – Formato mayorista"
+            -> name: "Chipa", brand: "Congelado", units from "x 5 kg"
+        
+        Args:
+            title: Raw product title
+            
+        Returns:
+            Tuple of (product_name, brand, full_title)
+        """
+        # Find the FIRST position of 'x' followed by:
+        # - a digit (with or without space): " x20", " x 20"
+        # - or a dash/separator: " x –", " x -"
+        # This ensures we match the x that indicates quantity, not other x's in the text
+        x_match = re.search(r'\s+x\s*(?=\d|[–-])', title, re.IGNORECASE)
+        
+        if x_match:
+            # Get everything before ' x'
+            before_x = title[:x_match.start()].strip()
+            
+            # Split by spaces to separate product name and brand
+            words = before_x.split()
+            
+            if len(words) >= 2:
+                # Last word before 'x' is the brand
+                brand = words[-1]
+                # Everything else is the product name
+                product_name = ' '.join(words[:-1])
+            elif len(words) == 1:
+                # Only one word, use it as product name, brand is supplier name
+                product_name = words[0]
+                brand = self.config.get('supplier_name', 'Distribuidora De Marchi')
+            else:
+                # Empty before x, use full title
+                product_name = title
+                brand = self.config.get('supplier_name', 'Distribuidora De Marchi')
+        else:
+            # No 'x' found, use full title as product name
+            product_name = title
+            brand = self.config.get('supplier_name', 'Distribuidora De Marchi')
+        
+        return product_name, brand, title
         """Get list of URLs to scrape from configuration."""
         return self.config.get('urls', [])
     
@@ -141,14 +200,20 @@ class DistribuidoraDeMarchiScraper(ScraperBase):
                         else:
                             image_url = urljoin(self.base_url, image_url)
                 
-                # Parse title to extract name, quantity, and unit
-                name, quantity, unit = self.parser.parse_product_title(title)
+                # Parse De Marchi title to extract product name and brand
+                product_name, brand, full_title = self._parse_demarchi_title(title)
+                
+                # Parse the full title to extract quantity and unit
+                # The parser will use the full title (with "x N unit") to get units
+                _, quantity, unit = self.parser.parse_product_title(full_title)
+                
+                self.logger.debug(f"Parsed '{title}' -> Name: '{product_name}', Brand: '{brand}', {quantity} {unit}")
                 
                 # Build product dictionary
                 product = {
-                    'name': name,
-                    'brand': self.config.get('supplier_name', 'Distribuidora De Marchi'),
-                    'description': title,
+                    'name': product_name,  # Use parsed product name (without brand)
+                    'brand': brand,  # Use extracted brand
+                    'description': title,  # Keep full title as description
                     'price': price,
                     'quantity': quantity,
                     'unit': unit,

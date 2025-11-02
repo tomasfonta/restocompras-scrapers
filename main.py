@@ -25,7 +25,8 @@ SCRAPER_REGISTRY = {
 
 
 def run_scraper(supplier_name: str, config_dir: str = 'configs', 
-                output_dir: str = 'output', log_dir: str = 'logs') -> bool:
+                output_dir: str = 'output', log_dir: str = 'logs',
+                environment: str = 'dev') -> bool:
     """
     Run scraper for a specific supplier.
     
@@ -34,6 +35,7 @@ def run_scraper(supplier_name: str, config_dir: str = 'configs',
         config_dir: Configuration directory path
         output_dir: Output directory for exports
         log_dir: Directory for log files
+        environment: Environment to use ('dev' or 'prod'). Default is 'dev'.
         
     Returns:
         True if successful, False otherwise
@@ -44,11 +46,13 @@ def run_scraper(supplier_name: str, config_dir: str = 'configs',
     try:
         # Load configurations
         logger.info(f"Starting scraper for: {supplier_name}")
+        logger.info(f"Environment: {environment.upper()}")
         
-        config_loader = ConfigLoader(config_dir)
+        config_loader = ConfigLoader(config_dir, environment=environment)
         
-        # Load API config
+        # Load API config (will use environment-specific config)
         api_config = config_loader.load_api_config()
+        logger.info(f"API Base URL: {api_config.get('base_url')}")
         api_client = APIClient(api_config)
         
         # Load supplier config first to check for supplier-specific credentials
@@ -113,6 +117,16 @@ def run_scraper(supplier_name: str, config_dir: str = 'configs',
                     
                     # Store full supplier details for potential future use
                     supplier_config['supplier_details'] = supplier_details
+                    
+                    # Clean database before scraping
+                    logger.info("="*70)
+                    logger.info("CLEANING DATABASE")
+                    logger.info("="*70)
+                    
+                    if api_client.delete_supplier_items(backend_supplier_id):
+                        logger.info("Database cleaned successfully - ready to scrape fresh data")
+                    else:
+                        logger.warning("Failed to clean database, but continuing with scrape...")
                 else:
                     logger.error(f"Could not fetch supplier details for {email}. Aborting.")
                     logger.error("Supplier ID and name are required from backend.")
@@ -206,11 +220,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
-  # Scrape Green Shop
+  # Scrape Green Shop (development)
   python main.py greenshop
   
-  # Scrape Lácteos Granero
-  python main.py lacteos_granero
+  # Scrape in production environment
+  python main.py greenshop --env prod
+  
+  # Scrape Lácteos Granero in production
+  python main.py lacteos_granero --env prod
   
   # List available suppliers
   python main.py --list
@@ -230,6 +247,15 @@ Examples:
         '--list',
         action='store_true',
         help='List all available suppliers'
+    )
+    
+    parser.add_argument(
+        '--env',
+        '--environment',
+        dest='environment',
+        choices=['dev', 'prod'],
+        default='dev',
+        help='Environment to use: dev (localhost) or prod (production server). Default: dev'
     )
     
     parser.add_argument(
@@ -268,7 +294,8 @@ Examples:
         args.supplier,
         config_dir=args.config_dir,
         output_dir=args.output_dir,
-        log_dir=args.log_dir
+        log_dir=args.log_dir,
+        environment=args.environment
     )
     
     sys.exit(0 if success else 1)

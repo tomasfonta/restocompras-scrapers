@@ -122,8 +122,14 @@ class LacteosGraneroScraper(ScraperBase):
         if full_title == "N/A":
             return None
         
-        # Parse title into name, quantity, unit
-        name, quantity, unit = self.parser.parse_product_title(full_title)
+        # Extract description (additional text that may contain weight/unit info)
+        description_selector = self.selectors.get('description', '.product__details__top__description')
+        description_tag = item.select_one(description_selector)
+        description_text = description_tag.text.strip() if description_tag else ""
+        
+        # Try to extract unit info from description if present
+        # Example: "El precio por kilo es $804 y el monto final depende del peso de cada horma (4kg aprox.)."
+        name, quantity, unit = self._parse_product_info(full_title, description_text)
         
         # Extract price
         price_selector = self.selectors.get('price', '.product__details__price--legacy__current--legacy')
@@ -162,6 +168,105 @@ class LacteosGraneroScraper(ScraperBase):
         }
         
         return product
+    
+    def _parse_product_info(self, title: str, description: str) -> tuple:
+        """
+        Parse product information from title and description.
+        
+        Tries to extract unit information from:
+        1. The title first (e.g., "Queso 500g")
+        2. Special cases: "por kilo" → 1 KG, "por horma" → check description
+        3. The description if title doesn't contain units (e.g., "(4kg aprox.)")
+        
+        Args:
+            title: Product title
+            description: Additional product description text
+            
+        Returns:
+            Tuple of (name, quantity, unit)
+        """
+        import re
+        
+        # First try parsing the title
+        name, quantity, unit = self.parser.parse_product_title(title)
+        
+        # Special case: "por kilo" in title means 1 KG
+        if "por kilo" in title.lower():
+            if unit == "UNIT":  # Only if no other unit was detected
+                unit = "KG"
+                quantity = "1"
+                # Remove "por kilo" from name
+                name = re.sub(r'\s*por\s+kilo\s*', '', name, flags=re.IGNORECASE).strip()
+                self.logger.debug(f"Detected 'por kilo' in title: {name} → 1 KG")
+        
+        # Special case: "por horma" in title - check description for weight
+        if "por horma" in title.lower() and description:
+            # Look for weight in description
+            match = re.search(
+                r'[\(\[]?\s*(\d+(?:[.,]\d+)?)\s*(kg|kilo|kilos|g|gr|gramos?)\s*(?:aprox\.?|aproximadamente)?[\)\]]?',
+                description,
+                re.IGNORECASE
+            )
+            
+            if match:
+                raw_quantity = match.group(1).strip().replace(',', '.')
+                raw_unit = match.group(2).strip().lower()
+                
+                # Standardize unit
+                if raw_unit in ['g', 'gr', 'gramo', 'gramos']:
+                    unit = "G"
+                elif raw_unit in ['kg', 'kilo', 'kilos']:
+                    unit = "KG"
+                
+                # Convert quantity
+                try:
+                    quantity_float = float(raw_quantity)
+                    if quantity_float.is_integer():
+                        quantity = str(int(quantity_float))
+                    else:
+                        quantity = str(quantity_float)
+                except ValueError:
+                    quantity = raw_quantity
+                
+                self.logger.debug(f"Detected 'por horma' with weight in description: {name} → {quantity} {unit}")
+        
+        # If no unit was found in title (defaults to UNIT), check description
+        elif unit == "UNIT" and description:
+            # Look for patterns like "(4kg aprox.)", "4 kg aprox", "500g aprox.", etc.
+            # Match: (number + optional decimal + unit + optional "aprox")
+            match = re.search(
+                r'[\(\[]?\s*(\d+(?:[.,]\d+)?)\s*(kg|kilo|kilos|g|gr|gramos?|l|litros?|cc|ml)\s*(?:aprox\.?|aproximadamente)?[\)\]]?',
+                description,
+                re.IGNORECASE
+            )
+            
+            if match:
+                raw_quantity = match.group(1).strip().replace(',', '.')
+                raw_unit = match.group(2).strip().lower()
+                
+                # Standardize unit (same logic as parser)
+                if raw_unit in ['g', 'gr', 'gramo', 'gramos']:
+                    unit = "G"
+                elif raw_unit in ['kg', 'kilo', 'kilos']:
+                    unit = "KG"
+                elif raw_unit in ['l', 'litro', 'litros']:
+                    unit = "L"
+                elif raw_unit in ['cc', 'ml']:
+                    unit = "ML"
+                
+                # Convert quantity to string, handling decimals
+                try:
+                    quantity_float = float(raw_quantity)
+                    if quantity_float.is_integer():
+                        quantity = str(int(quantity_float))
+                    else:
+                        quantity = str(quantity_float)
+                except ValueError:
+                    quantity = raw_quantity
+                
+                self.logger.debug(f"Extracted unit from description: {quantity} {unit} (from: {description[:50]}...)")
+        
+        return name, quantity, unit
     
     def __del__(self):
         """Clean up strategy resources."""

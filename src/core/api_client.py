@@ -28,6 +28,7 @@ class APIClient:
         self.search_endpoint = config.get('search_endpoint', '/api/products/search/best-match')
         self.item_endpoint = config.get('item_endpoint', '/api/item')
         self.supplier_search_endpoint = config.get('supplier_search_endpoint', '/api/suppliers/search')
+        self.supplier_delete_endpoint = config.get('supplier_delete_endpoint', '/api/supplier/{supplier_id}')
         self.timeout = config.get('timeout', 10)
         self.credentials = config.get('credentials', {})
         # Use the main logger instance instead of creating a separate one
@@ -79,8 +80,8 @@ class APIClient:
         
         # 📤 REQUEST LOGGING
         self.logger.info(f"📤 POST {login_url}")
-        self.logger.debug(f"📤 Request headers: {{'Content-Type': 'application/json'}}")
-        self.logger.debug(f"📤 Request body: {payload}")
+        # self.logger.debug(f"📤 Request headers: {{'Content-Type': 'application/json'}}")
+        # self.logger.debug(f"📤 Request body: {payload}")
         
         try:
             response = requests.post(
@@ -92,7 +93,7 @@ class APIClient:
             
             # 📥 RESPONSE LOGGING
             self.logger.info(f"📥 Response status: {response.status_code}")
-            self.logger.debug(f"📥 Response headers: {json.dumps(dict(response.headers), indent=2)}")
+            # self.logger.debug(f"📥 Response headers: {json.dumps(dict(response.headers), indent=2)}")
             
             # Log response body (sanitized for security)
             try:
@@ -190,7 +191,7 @@ class APIClient:
         
         # 📤 REQUEST LOGGING
         self.logger.info(f"📤 GET {search_url}")
-        self.logger.debug(f"📤 Request headers: {json.dumps({k: '***' if 'authorization' in k.lower() else v for k, v in self._headers.items()}, indent=2)}")
+        # self.logger.debug(f"📤 Request headers: {json.dumps({k: '***' if 'authorization' in k.lower() else v for k, v in self._headers.items()}, indent=2)}")
         
         try:
             response = requests.get(
@@ -201,7 +202,7 @@ class APIClient:
             
             # 📥 RESPONSE LOGGING
             self.logger.info(f"📥 Response status: {response.status_code}")
-            self.logger.debug(f"📥 Response headers: {json.dumps(dict(response.headers), indent=2)}")
+            # self.logger.debug(f"📥 Response headers: {json.dumps(dict(response.headers), indent=2)}")
             
             if response.status_code == 200:
                 supplier_data = response.json()
@@ -307,8 +308,8 @@ class APIClient:
         # 📤 REQUEST LOGGING
         self.logger.info(f"🔍 Searching for product: '{query}'")
         self.logger.info(f"📤 GET {search_url}")
-        self.logger.debug(f"📤 Request headers: {json.dumps({k: '***' if 'authorization' in k.lower() else v for k, v in self._headers.items()}, indent=2)}")
-        self.logger.debug(f"📤 Query parameters: {{'query': query}}")
+        # self.logger.debug(f"📤 Request headers: {json.dumps({k: '***' if 'authorization' in k.lower() else v for k, v in self._headers.items()}, indent=2)}")
+        # self.logger.debug(f"📤 Query parameters: {{'query': query}}")
         
         try:
             response = requests.get(
@@ -319,7 +320,7 @@ class APIClient:
             
             # 📥 RESPONSE LOGGING
             self.logger.info(f"📥 Response status: {response.status_code}")
-            self.logger.debug(f"📥 Response headers: {json.dumps(dict(response.headers), indent=2)}")
+            # self.logger.debug(f"📥 Response headers: {json.dumps(dict(response.headers), indent=2)}")
             
             response.raise_for_status()
             
@@ -385,8 +386,8 @@ class APIClient:
         # 📤 REQUEST LOGGING
         self.logger.info(f"📦 Posting product: '{product_data['name']}'")
         self.logger.info(f"📤 POST {post_url}")
-        self.logger.debug(f"📤 Request headers: {json.dumps({k: '***' if 'authorization' in k.lower() else v for k, v in self._headers.items()}, indent=2)}")
-        self.logger.debug(f"📤 Request body: {json.dumps(payload, indent=2)}")
+        # self.logger.debug(f"📤 Request headers: {json.dumps({k: '***' if 'authorization' in k.lower() else v for k, v in self._headers.items()}, indent=2)}")
+        # self.logger.debug(f"📤 Request body: {json.dumps(payload, indent=2)}")
         
         try:
             response = requests.post(
@@ -398,7 +399,7 @@ class APIClient:
             
             # 📥 RESPONSE LOGGING
             self.logger.info(f"📥 Response status: {response.status_code}")
-            self.logger.debug(f"📥 Response headers: {json.dumps(dict(response.headers), indent=2)}")
+            # self.logger.debug(f"📥 Response headers: {json.dumps(dict(response.headers), indent=2)}")
             
             # Log response details
             try:
@@ -431,7 +432,7 @@ class APIClient:
             # Try to log error response with enhanced details
             if hasattr(e, 'response') and e.response is not None:
                 self.logger.error(f"📥 Error response status: {e.response.status_code}")
-                self.logger.debug(f"📥 Error response headers: {json.dumps(dict(e.response.headers), indent=2)}")
+                # self.logger.debug(f"📥 Error response headers: {json.dumps(dict(e.response.headers), indent=2)}")
                 try:
                     error_data = e.response.json()
                     self.logger.error(f"📥 Error response body: {json.dumps(error_data, indent=2)}")
@@ -445,6 +446,89 @@ class APIClient:
                         if error_code:
                             self.logger.error(f"🔢 Error code: {error_code}")
                             
+                except:
+                    self.logger.error(f"📥 Error response text: {e.response.text[:200]}")
+            
+            return False
+    
+    def delete_supplier_items(self, supplier_id: int) -> bool:
+        """
+        Delete all items from a supplier to clean the database.
+        
+        This should be called before scraping to ensure fresh data
+        and avoid duplicates in the database.
+        
+        Args:
+            supplier_id: ID of the supplier whose items should be deleted
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        # Use configured endpoint with supplier_id placeholder
+        endpoint = self.supplier_delete_endpoint.format(supplier_id=supplier_id)
+        delete_url = f"{self.base_url}{endpoint}"
+        
+        self.logger.info(f"🗑️  Cleaning database for supplier ID: {supplier_id}")
+        
+        # 📤 REQUEST LOGGING
+        self.logger.info(f"📤 DELETE {delete_url}")
+        # self.logger.debug(f"📤 Request headers: {json.dumps({k: '***' if 'authorization' in k.lower() else v for k, v in self._headers.items()}, indent=2)}")
+        
+        try:
+            response = requests.delete(
+                delete_url,
+                headers=self._headers,
+                timeout=self.timeout
+            )
+            
+            # 📥 RESPONSE LOGGING
+            self.logger.info(f"📥 Response status: {response.status_code}")
+            # self.logger.debug(f"📥 Response headers: {json.dumps(dict(response.headers), indent=2)}")
+            
+            # Log response details
+            try:
+                response_data = response.json()
+                self.logger.debug(f"📥 Response body: {json.dumps(response_data, indent=2)}")
+                
+                # Extract useful information from response
+                if isinstance(response_data, dict):
+                    deleted_count = response_data.get('deletedCount') or response_data.get('count') or response_data.get('deleted')
+                    message = response_data.get('message') or response_data.get('msg')
+                    
+                    if deleted_count is not None:
+                        self.logger.info(f"📊 Deleted {deleted_count} items")
+                    if message:
+                        self.logger.info(f"💬 Server message: {message}")
+                        
+            except json.JSONDecodeError:
+                self.logger.debug(f"📥 Response body (text): {response.text[:200]}")
+            
+            # Consider 200, 204 (No Content), and 404 (no items to delete) as success
+            if response.status_code in [200, 204, 404]:
+                if response.status_code == 404:
+                    self.logger.info("✅ No items found to delete (supplier has no items)")
+                else:
+                    self.logger.info(f"✅ Successfully cleaned database for supplier ID: {supplier_id}")
+                return True
+            else:
+                self.logger.error(f"❌ Failed to delete items - Status: {response.status_code}")
+                try:
+                    error_data = response.json()
+                    self.logger.error(f"📥 Error response body: {json.dumps(error_data, indent=2)}")
+                except:
+                    self.logger.error(f"📥 Error response text: {response.text[:200]}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"🔌 Delete request failed for supplier ID {supplier_id}: {e}")
+            
+            # Try to log error response with enhanced details
+            if hasattr(e, 'response') and e.response is not None:
+                self.logger.error(f"📥 Error response status: {e.response.status_code}")
+                # self.logger.debug(f"📥 Error response headers: {json.dumps(dict(e.response.headers), indent=2)}")
+                try:
+                    error_data = e.response.json()
+                    self.logger.error(f"📥 Error response body: {json.dumps(error_data, indent=2)}")
                 except:
                     self.logger.error(f"📥 Error response text: {e.response.text[:200]}")
             

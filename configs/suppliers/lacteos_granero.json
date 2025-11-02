@@ -6,6 +6,7 @@
   "selectors": {
     "product_list": ".product",
     "title": ".product__details__top__name",
+    "description": ".product__details__top__description",
     "price": ".product__details__price--legacy__current--legacy",
     "image": ".image-gallery-image"
   },
