@@ -27,7 +27,7 @@
     "unit": ["unidad", "unit", "medida"]
   },
   "price_format": {
-    "thousands_separator": ".",
-    "decimal_separator": ","
+    "thousands_separator": "",
+    "decimal_separator": "."
   }
 }
