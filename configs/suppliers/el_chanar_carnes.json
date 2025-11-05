@@ -1,10 +1,10 @@
 {
-  "supplier_id": 6,
+  "supplier_id": 12,
   "supplier_name": "El Chañar carnes",
   "scraping_strategy": "excel",
   "credentials": {
-    "name": "",
-    "password": ""
+    "name": "chanar@gmail.com",
+    "password": "123123"
   },
   "file_config": {
     "filename": "LISTAS_EL_CHANAR_CARNES.xlsx",
@@ -12,7 +12,7 @@
     "strategy_type": "excel"
   },
   "excel_config": {
-    "sheet_name": 0,
+    "sheet_name": 1,
     "header_row": null,
     "skip_rows": 3,
     "use_pandas": true

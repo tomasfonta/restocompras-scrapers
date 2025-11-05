@@ -11,9 +11,8 @@ class DataParser:
     Provides standardized methods for extracting quantities, units,
     and prices from product text.
     """
-    
     @staticmethod
-    def parse_product_title(full_title: str) -> Tuple[str, str, str]:
+    def parse_product_title(full_title: str, default_unit: str = 'UNIT') -> Tuple[str, str, str]:
         """
         Parse product title into name, quantity, and unit.
         
@@ -67,7 +66,7 @@ class DataParser:
             match = re.search(unit_pattern, name, re.IGNORECASE)
         
         quantity = "1"
-        unit = "UNIT"
+        unit = default_unit
         matched_text = ""
         
         if match:

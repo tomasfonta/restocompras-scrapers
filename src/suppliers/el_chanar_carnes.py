@@ -222,7 +222,7 @@ class ElChanarCarnesScraper(ScraperBase):
             'name': parsed.get('name', name).strip(),
             'brand': self.config['supplier_name'],
             'description': parsed.get('name', name).strip(),
-            'price': price,
+            'price': price * parsed.get('quantity', 1),
             'quantity': parsed.get('quantity', 1),
             'unit': parsed.get('unit', 'UNIT'),
             'image': '',
@@ -262,7 +262,7 @@ class ElChanarCarnesScraper(ScraperBase):
         """
         from ..core.parser import DataParser
         
-        name, quantity_str, unit = DataParser.parse_product_title(title)
+        name, quantity_str, unit = DataParser.parse_product_title(title, default_unit="KG")
         
         try:
             quantity = float(quantity_str)
