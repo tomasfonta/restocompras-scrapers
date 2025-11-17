@@ -40,6 +40,13 @@ python3 main.py greenshop --env dev
 # Production (restocompras2.onrender.com)
 python3 main.py greenshop --env prod
 
+# Run ALL scrapers - Development
+python3 main.py --all
+python3 main.py --all --env dev
+
+# Run ALL scrapers - Production
+python3 main.py --all --env prod
+
 # List available suppliers
 python3 main.py --list
 
@@ -510,7 +517,19 @@ All API requests automatically include the Authorization header:
 
 ## 🚀 Running All Suppliers
 
-### Run All Suppliers Scripts
+### Integrated Method (Recommended)
+
+**Use the new `--all` flag with main.py:**
+```bash
+# Development (default)
+python3 main.py --all
+python3 main.py --all --env dev
+
+# Production
+python3 main.py --all --env prod
+```
+
+### Alternative: Standalone Scripts
 
 **Python Script (Cross-platform):**
 ```bash

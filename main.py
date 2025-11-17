@@ -3,7 +3,8 @@
 import argparse
 import logging
 import sys
-from typing import Optional
+from datetime import datetime
+from typing import Optional, List, Tuple
 
 from src.config import ConfigLoader
 from src.core import APIClient, DataExporter
@@ -220,6 +221,112 @@ def list_suppliers(config_dir: str = 'configs') -> None:
     print()
 
 
+def run_all_scrapers(config_dir: str = 'configs', output_dir: str = 'output',
+                    log_dir: str = 'logs', environment: str = 'dev') -> Tuple[List[str], List[str]]:
+    """
+    Run scrapers for all available suppliers.
+    
+    Args:
+        config_dir: Configuration directory path
+        output_dir: Output directory for exports
+        log_dir: Directory for log files
+        environment: Environment to use ('dev' or 'prod')
+        
+    Returns:
+        Tuple of (successful_suppliers, failed_suppliers)
+    """
+    # ANSI color codes
+    GREEN = '\033[0;32m'
+    RED = '\033[0;31m'
+    YELLOW = '\033[1;33m'
+    BLUE = '\033[0;34m'
+    RESET = '\033[0m'
+    
+    # Get list of available suppliers
+    config_loader = ConfigLoader(config_dir)
+    available_suppliers = config_loader.list_suppliers()
+    
+    # Filter to only include suppliers with implementations
+    suppliers_to_run = [s for s in available_suppliers if s in SCRAPER_REGISTRY]
+    
+    if not suppliers_to_run:
+        print(f"{RED}No suppliers with implementations found.{RESET}")
+        return [], []
+    
+    successful_suppliers: List[str] = []
+    failed_suppliers: List[str] = []
+    
+    # Print header
+    print("=" * 71)
+    print(f"{BLUE}restoCompras Scrapers - Running All Suppliers{RESET}")
+    print("=" * 71)
+    print(f"Environment: {YELLOW}{environment.upper()}{RESET}")
+    print(f"Total suppliers to scrape: {len(suppliers_to_run)}")
+    start_time = datetime.now()
+    print(f"Start time: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 71)
+    
+    # Run each supplier
+    for i, supplier in enumerate(suppliers_to_run, 1):
+        print()
+        print("-" * 71)
+        print(f"{YELLOW}[{i}/{len(suppliers_to_run)}] Running scraper for: {supplier} (env: {environment}){RESET}")
+        print("-" * 71)
+        
+        success = run_scraper(
+            supplier,
+            config_dir=config_dir,
+            output_dir=output_dir,
+            log_dir=log_dir,
+            environment=environment
+        )
+        
+        if success:
+            successful_suppliers.append(supplier)
+            print(f"{GREEN}✓ {supplier} completed successfully{RESET}")
+        else:
+            failed_suppliers.append(supplier)
+            print(f"{RED}✗ {supplier} failed{RESET}")
+    
+    # Calculate duration
+    end_time = datetime.now()
+    duration = end_time - start_time
+    
+    # Print summary
+    print()
+    print()
+    print("=" * 71)
+    print(f"{BLUE}SCRAPING SUMMARY{RESET}")
+    print("=" * 71)
+    print(f"End time: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Duration: {duration}")
+    print()
+    print(f"Total suppliers: {len(suppliers_to_run)}")
+    print(f"{GREEN}Successful: {len(successful_suppliers)}{RESET}")
+    print(f"{RED}Failed: {len(failed_suppliers)}{RESET}")
+    print()
+    
+    # Show successful suppliers
+    if successful_suppliers:
+        print(f"{GREEN}Successful suppliers:{RESET}")
+        for supplier in successful_suppliers:
+            print(f"  ✓ {supplier}")
+        print()
+    
+    # Show failed suppliers
+    if failed_suppliers:
+        print(f"{RED}Failed suppliers:{RESET}")
+        for supplier in failed_suppliers:
+            print(f"  ✗ {supplier}")
+        print()
+    
+    print("Output files saved to: output/")
+    print("Log files saved to: logs/")
+    print("=" * 71)
+    
+    return successful_suppliers, failed_suppliers
+
+
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -236,6 +343,12 @@ Examples:
   # Scrape Lácteos Granero in production
   python main.py lacteos_granero --env prod
   
+  # Run all scrapers in development
+  python main.py --all
+  
+  # Run all scrapers in production
+  python main.py --all --env prod
+  
   # List available suppliers
   python main.py --list
   
@@ -248,6 +361,12 @@ Examples:
         'supplier',
         nargs='?',
         help='Name of supplier to scrape (e.g., greenshop, lacteos_granero)'
+    )
+    
+    parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Run scrapers for all available suppliers'
     )
     
     parser.add_argument(
@@ -290,10 +409,20 @@ Examples:
         list_suppliers(args.config_dir)
         return
     
-    # Require supplier argument if not listing
+    # Handle run all command
+    if args.all:
+        successful_suppliers, failed_suppliers = run_all_scrapers(
+            config_dir=args.config_dir,
+            output_dir=args.output_dir,
+            log_dir=args.log_dir,
+            environment=args.environment
+        )
+        sys.exit(0 if not failed_suppliers else 1)
+    
+    # Require supplier argument if not listing or running all
     if not args.supplier:
         parser.print_help()
-        print("\nError: supplier argument is required (or use --list)")
+        print("\nError: supplier argument is required (or use --list or --all)")
         sys.exit(1)
     
     # Run scraper
