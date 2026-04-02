@@ -1,8 +1,9 @@
 """Base scraper class defining the common interface for all scrapers."""
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import logging
+from .item_builder import ItemBuilder
 
 
 class ScraperBase(ABC):
@@ -26,14 +27,23 @@ class ScraperBase(ABC):
         self.api_client = api_client
         self.logger = logging.getLogger(self.__class__.__name__)
         self._validate_config()
+        
+        # Initialize ItemBuilder for configuration-driven item creation
+        self.item_builder = ItemBuilder(config)
     
     def _validate_config(self) -> None:
         """Validate that required configuration keys are present."""
-        required_keys = ['supplier_id', 'supplier_name', 'scraping_strategy']
+        required_keys = ['scraping_strategy']
         missing_keys = [key for key in required_keys if key not in self.config]
         
         if missing_keys:
             raise ValueError(f"Missing required config keys: {missing_keys}")
+        
+        # Set defaults for optional fields
+        if 'supplier_id' not in self.config:
+            self.config['supplier_id'] = 0
+        if 'supplier_name' not in self.config:
+            self.config['supplier_name'] = 'Unknown Supplier'
     
     @abstractmethod
     def get_urls(self) -> List[str]:
@@ -132,7 +142,7 @@ class ScraperBase(ABC):
     
     def _integrate_with_api(self, products: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Fetch product IDs and post to API.
+        Fetch product IDs, build items using ItemBuilder, and post to API.
         
         Args:
             products: Processed product list
@@ -143,6 +153,7 @@ class ScraperBase(ABC):
         self.logger.info(f"Integrating {len(products)} products with API...")
         
         successful_products = []
+        failed_products = []
         
         for product in products:
             product_name = product.get('name')
@@ -152,15 +163,41 @@ class ScraperBase(ABC):
             
             if product_id is None:
                 self.logger.warning(f"Skipping {product_name}: No product ID found")
+                failed_products.append({
+                    'product': product,
+                    'reason': 'No product ID found'
+                })
                 continue
             
-            product['productId'] = product_id
+            # Build item using ItemBuilder with supplier-specific transformations
+            item = self.item_builder.build_item(product, product_id)
             
-            # Post to API
-            if self.api_client.post_item(product):
-                successful_products.append(product)
+            if item is None:
+                self.logger.warning(f"Skipping {product_name}: ItemBuilder failed")
+                failed_products.append({
+                    'product': product,
+                    'reason': 'ItemBuilder failed'
+                })
+                continue
+            
+            # Post to API (no validation, send directly)
+            if self.api_client.post_item(item):
+                successful_products.append(item)
+            else:
+                failed_products.append({
+                    'product': product,
+                    'reason': 'API post failed'
+                })
         
-        self.logger.info(f"Successfully posted {len(successful_products)} products to API")
+        self.logger.info(
+            f"Successfully posted {len(successful_products)} products to API"
+        )
+        if failed_products:
+            self.logger.info(
+                f"Failed to post {len(failed_products)} products "
+                f"({len(products) - len(successful_products)} total skipped)"
+            )
+        
         return successful_products
     
     def get_supplier_id(self) -> int:

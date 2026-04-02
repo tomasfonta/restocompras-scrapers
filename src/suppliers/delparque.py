@@ -1,4 +1,4 @@
-"""Green Shop scraper implementation."""
+"""Del Parque Bebidas scraper implementation."""
 
 from typing import List, Dict, Any
 from bs4 import BeautifulSoup
@@ -9,18 +9,17 @@ from ..core.parser import DataParser
 from ..strategies import RequestsStrategy
 
 
-class GreenShopScraper(ScraperBase):
+class DelparqueScraper(ScraperBase):
     """
-    Scraper for Green Shop website.
+    Scraper for Del Parque Bebidas website.
     
-    Note: Green Shop displays product lists with Quick View modals for details.
-    This scraper extracts available data from the list view.
-    For full details (description, exact price), Selenium would be needed.
+    Del Parque is a beverage distributor using WooCommerce.
+    Prices shown are per unit (bottles, cans, etc).
     """
     
     def __init__(self, config: Dict[str, Any], api_client: 'APIClient'):
         """
-        Initialize Green Shop scraper.
+        Initialize Del Parque Bebidas scraper.
         
         Args:
             config: Supplier configuration
@@ -48,10 +47,7 @@ class GreenShopScraper(ScraperBase):
     
     def extract_products(self, html_content: str, url: str) -> List[Dict[str, Any]]:
         """
-        Extract products from Green Shop HTML product list.
-        
-        Extracts all products from the list view.
-        Note: Some details (description) are in Quick View modals.
+        Extract products from Del Parque Bebidas HTML.
         
         Args:
             html_content: Raw HTML content
@@ -62,8 +58,8 @@ class GreenShopScraper(ScraperBase):
         """
         soup = BeautifulSoup(html_content, 'html.parser')
         
-        # Find all product items in the list
-        product_selector = self.selectors.get('product_list', '.product-small')
+        # Find all product items
+        product_selector = self.selectors.get('product_list', 'li.product')
         product_items = soup.select(product_selector)
         
         if not product_items:
@@ -92,7 +88,7 @@ class GreenShopScraper(ScraperBase):
     
     def _extract_single_product(self, item: BeautifulSoup, base_url: str) -> Dict[str, Any]:
         """
-        Extract data from a single product element in the list.
+        Extract data from a single product element.
         
         Args:
             item: BeautifulSoup element for product
@@ -101,37 +97,35 @@ class GreenShopScraper(ScraperBase):
         Returns:
             Product dictionary or None if invalid
         """
-        # Check stock status - skip out of stock items
-        status_selector = self.selectors.get('status', '.out-of-stock-label')
-        is_out_of_stock = item.select_one(status_selector) is not None
-        
-        if is_out_of_stock:
-            return None
-        
         # Extract title/name
-        title_selector = self.selectors.get('title', '.product-title a')
+        title_selector = self.selectors.get('title', 'h2.woocommerce-loop-product__title')
         title_tag = item.select_one(title_selector)
         
         if not title_tag:
             return None
         
-        full_title = title_tag.text.strip()
+        full_title = title_tag.get_text(strip=True)
         
         if not full_title or full_title == "N/A":
             return None
         
-        # Parse title into name, quantity, unit
-        name, quantity, unit = self.parser.parse_product_title(full_title)
+        # Extract title/name and ignore unit parsing 
+        # (price is per pack, not per liter/ml)
+        name = full_title.strip()
         
-        # Extract price from list view
-        price_selector = self.selectors.get('price', '.price .amount')
+        # For Del Parque, quantity=1 and unit=UNIT (price per pack)
+        quantity = 1
+        unit = 'UNIT'
+        
+        # Extract price
+        price_selector = self.selectors.get('price', '.price .woocommerce-Price-amount')
         price_tag = item.select_one(price_selector)
         
         if not price_tag:
             self.logger.debug(f"No price found for {name}")
             return None
         
-        price_text = price_tag.text.strip()
+        price_text = price_tag.get_text(strip=True)
         
         # Clean and convert price using custom format from config
         price_format = self.config.get('price_format', {})
@@ -142,7 +136,7 @@ class GreenShopScraper(ScraperBase):
             return None
         
         # Extract image
-        image_selector = self.selectors.get('image', '.box-image img')
+        image_selector = self.selectors.get('image', 'img.attachment-woocommerce_thumbnail')
         img_tag = item.select_one(image_selector)
         image_url = ""
         
@@ -158,7 +152,7 @@ class GreenShopScraper(ScraperBase):
         product = {
             'name': name,
             'brand': self.config['supplier_name'],
-            'description': name,  # Use name as description (modal has more details)
+            'description': name,
             'price': price,
             'image': image_url,
             'unit': unit,

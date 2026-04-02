@@ -1,4 +1,6 @@
 {
+  "supplier_id": 46,
+  "supplier_name": "La Piala",
   "scraping_strategy": "requests",
   "urls": [
     "https://www.piala.com.ar/productos/",
@@ -26,5 +28,44 @@
   "credentials": {
     "name": "lapiala@restocompras.com",
     "password": "123123"
+  },
+  "item_transform": {
+    "field_mappings": {
+      "name": {
+        "source": "name",
+        "transform": "trim"
+      },
+      "brand": "La Piala",
+      "description": "description"
+    },
+    "price_adjustments": {
+      "markup_percent": 0,
+      "rounding": 0,
+      "min_price": 0
+    },
+    "unit_mappings": {
+      "KG": "KG",
+      "KILOGRAMO": "KG",
+      "K": "KG",
+      "KILOS": "KG",
+      "KILOGRAMOS": "KG",
+      "G": "G",
+      "GR": "G",
+      "GRAMO": "G",
+      "GRAMOS": "G",
+      "ML": "ML",
+      "L": "L",
+      "LITRO": "L",
+      "LITROS": "L",
+      "U": "UNIT",
+      "UN": "UNIT",
+      "UNIT": "UNIT",
+      "UNIDAD": "UNIT",
+      "UNIDADES": "UNIT"
+    },
+    "defaults": {
+      "unit": "KG",
+      "quantity": 1
+    }
   }
 }

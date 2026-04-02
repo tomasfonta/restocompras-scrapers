@@ -1,0 +1,62 @@
+{
+  "supplier_id": 47,
+  "supplier_name": "Del Parque Bebidas",
+  "scraping_strategy": "requests",
+  "urls": [
+    "https://delparquebebidas.com.ar/productos/?v=edb18509e4a0"
+  ],
+  "selectors": {
+    "product_list": "li.product",
+    "title": "h2.woocommerce-loop-product__title",
+    "price": ".price .woocommerce-Price-amount",
+    "image": "img.attachment-woocommerce_thumbnail"
+  },
+  "strategy_config": {
+    "timeout": 15
+  },
+  "price_format": {
+    "thousands_separator": ".",
+    "decimal_separator": ",",
+    "description": "Format: 2.300,00 -> 2300.00"
+  },
+  "credentials": {
+    "name": "delparque@restocompras.com",
+    "password": "123123"
+  },
+  "item_transform": {
+    "field_mappings": {
+      "name": {
+        "source": "name",
+        "transform": "trim"
+      },
+      "brand": "Del Parque Bebidas",
+      "description": "description"
+    },
+    "price_adjustments": {
+      "markup_percent": 0,
+      "rounding": 0,
+      "min_price": 0
+    },
+    "unit_mappings": {
+      "KG": "KG",
+      "KILOGRAMO": "KG",
+      "L": "L",
+      "LITRO": "L",
+      "LITROS": "L",
+      "ML": "ML",
+      "CC": "ML",
+      "G": "G",
+      "GR": "G",
+      "GRAMO": "G",
+      "U": "UNIT",
+      "UN": "UNIT",
+      "UNIT": "UNIT",
+      "UNIDAD": "UNIT",
+      "UNIDADES": "UNIT"
+    },
+    "defaults": {
+      "unit": "UNIT",
+      "quantity": 1
+    }
+  }
+}

@@ -102,8 +102,9 @@ class PialaScraper(ScraperBase):
                 if not title:
                     continue
                 
-                # Parse title into components
-                name, quantity, unit = self.parser.parse_product_title(title)
+                # For La Piala, prices are always per 1 kg, regardless of title content
+                # Extract name only (ignore quantity/unit from title)
+                name = title.strip()
                 
                 # Clean and convert price using custom format from config
                 price_format = self.config.get('price_format', {})
@@ -121,30 +122,13 @@ class PialaScraper(ScraperBase):
                     if image_url and not image_url.startswith('http'):
                         image_url = urljoin(self.base_url, image_url)
                 
-                # Normalize unit mapping (from TYNA scraper pattern)
-                unit_mapping = {
-                    'GR': 'G',
-                    'GR.': 'G', 
-                    'GRAMOS': 'G',
-                    'KG': 'KG',
-                    'K': 'KG',
-                    'KG.': 'KG',
-                    'KILOS': 'KG',
-                    'KILOGRAMOS': 'KG',
-                    'UN': 'UNIT',
-                    'UN.': 'UNIT',
-                    'UNIDAD': 'UNIT',
-                    'UNIDADES': 'UNIT'
-                }
-                
-                normalized_unit = unit_mapping.get(unit.upper(), unit)
-                
                 # Build product dictionary
+                # La Piala always shows price per 1 kg
                 product = {
                     'name': name,
                     'price': price,
-                    'unit': normalized_unit,
-                    'quantity': quantity,
+                    'unit': 'KG',
+                    'quantity': 1,
                     'supplierId': self.config.get('supplier_id', 0),  # Will be set by main.py
                     'brand': self.config.get('supplier_name', ''),    # Will be set by main.py
                     'description': name,

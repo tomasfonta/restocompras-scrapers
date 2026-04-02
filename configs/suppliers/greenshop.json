@@ -1,4 +1,6 @@
 {
+  "supplier_id": 45,
+  "supplier_name": "Green Shop",
   "scraping_strategy": "requests",
   "urls": [
     "https://greenshop.ar/categoria-producto/frutas/todas-las-frutas/",
@@ -16,7 +18,7 @@
     "image": ".box-image img"
   },
   "strategy_config": {
-    "timeout": 15
+    "timeout": 30
   },
   "price_format": {
     "thousands_separator": ".",
@@ -26,5 +28,43 @@
   "credentials": {
     "name": "greenshop@restocompras.com",
     "password": "123123"
+  },
+  "item_transform": {
+    "field_mappings": {
+      "name": {
+        "source": "name",
+        "transform": "trim"
+      },
+      "brand": "Green Shop",
+      "description": "description"
+    },
+    "price_adjustments": {
+      "markup_percent": 0,
+      "rounding": 0,
+      "min_price": 0
+    },
+    "unit_mappings": {
+      "KG": "KG",
+      "KILOGRAMO": "KG",
+      "LT": "L",
+      "LITRO": "L",
+      "L": "L",
+      "U": "UNIT",
+      "UNIDAD": "UNIT",
+      "UNIT": "UNIT",
+      "GR": "G",
+      "GRAMO": "G",
+      "G": "G",
+      "ML": "ML",
+      "DOC": "UNIT",
+      "PACK": "UNIT",
+      "BOX": "UNIT",
+      "BOTELLA": "UNIT",
+      "LATA": "UNIT"
+    },
+    "defaults": {
+      "unit": "UNIT",
+      "quantity": 1
+    }
   }
 }

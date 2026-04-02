@@ -160,6 +160,21 @@ class SeleniumStrategy(ScrapingStrategy):
         
         self.logger.debug("Scrolling completed")
     
+    def execute_script(self, script: str) -> Any:
+        """
+        Execute JavaScript on the page.
+        
+        Args:
+            script: JavaScript code to execute
+            
+        Returns:
+            Result of JavaScript execution
+        """
+        if self.driver is None:
+            raise RuntimeError("WebDriver not initialized")
+        
+        return self.driver.execute_script(script)
+    
     def close(self) -> None:
         """Close the WebDriver and clean up resources."""
         if self.driver is not None:

@@ -101,6 +101,8 @@ class DistribuidoraDeMarchiScraper(ScraperBase):
             brand = self.config.get('supplier_name', 'Distribuidora De Marchi')
         
         return product_name, brand, title
+    
+    def get_urls(self) -> List[str]:
         """Get list of URLs to scrape from configuration."""
         return self.config.get('urls', [])
     
@@ -232,3 +234,8 @@ class DistribuidoraDeMarchiScraper(ScraperBase):
         )
         
         return products
+    
+    def __del__(self):
+        """Clean up resources."""
+        if hasattr(self, 'strategy'):
+            self.strategy.close()
