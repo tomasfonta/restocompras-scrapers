@@ -17,6 +17,79 @@ mkdir -p output logs
 
 ## Uso Rápido
 
+### Usar la API REST (nuevo)
+
+#### 1. Configuración
+```bash
+# Copiar archivo de configuración
+cp .env.example .env
+
+# Editar .env con tu API key
+export API_KEY_SECRET="tu-clave-secreta"
+export FLASK_PORT=5000
+export FLASK_ENV=dev
+```
+
+#### 2. Iniciar servidor Flask
+```bash
+python app.py
+```
+
+#### 3. Ejemplos de uso
+
+**Verificar salud del servidor:**
+```bash
+curl http://localhost:5000/health
+```
+
+**Listar proveedores disponibles:**
+```bash
+curl -H "Authorization: Bearer tu-clave-secreta" \
+  http://localhost:5000/api/suppliers
+```
+
+**Realizar scraping de un proveedor (retorna items, sin guardar):**
+```bash
+curl -X POST \
+  http://localhost:5000/api/scrape/delparque
+```
+
+> **Nota:** El endpoint extrae y transforma items automáticamente. Los items se devuelven en JSON sin guardarse en la base de datos. No hace POST a la API backend, solo devuelve los datos.
+
+**Respuesta JSON típica:**
+```json
+{
+  "status": "success",
+  "supplier": "delparque",
+  "supplier_id": 47,
+  "supplier_name": "Del Parque Bebidas",
+  "item_count": 42,
+  "items": [
+    {
+      "name": "Bebida 500ml",
+      "price": 150.50,
+      "brand": "Del Parque",
+      "description": "...",
+      "image": "https://example.com/image.jpg",
+      "productId": 123,
+      "unit": "ML",
+      "quantity": 500,
+      "supplierId": 47
+    }
+  ]
+}
+```
+
+#### 4. Testing de la API
+```bash
+# Ejecutar suite completa de tests
+python test_api.py
+```
+
+---
+
+### CLI tradicional (antiguo)
+
 ### Testear un proveedor (dry-run)
 ```bash
 python3 skills/test_scraper.py greenshop
@@ -158,7 +231,7 @@ python3 skills/validate.py output/results.json --verbose
 | `skills/test_batch.py` | CLI para testear todos |
 | `skills/validate.py` | CLI para validar items |
 
-## API Restocompras
+## API Restocompras Backend
 
 **Endpoint**: POST `/api/items` (restocompras-back)
 
@@ -174,6 +247,119 @@ python3 skills/validate.py output/results.json --verbose
   "brand": "Green Shop"
 }
 ```
+
+---
+
+## API REST de Scrapers (Flask)
+
+### Autenticación
+
+Algunos endpoints requieren un token Bearer:
+
+```
+Authorization: Bearer <API_KEY_SECRET>
+```
+
+**Endpoints públicos (sin autenticación):**
+- `GET /health` - Health check
+- `GET /api/scrape` - Información de uso
+- `POST /api/scrape/<supplier_name>` - Realizar scraping
+
+**Endpoints protegidos (requieren API key):**
+- `GET /api/suppliers` - Listar proveedores
+
+### Endpoints Disponibles
+
+#### `GET /health`
+Verificar estado del servicio (sin auth).
+
+**Respuesta:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-04-04T10:30:00",
+  "service": "restocompras-scrapers-api"
+}
+```
+
+#### `GET /api/scrape`
+Información sobre el endpoint de scraping (sin auth).
+
+**Respuesta:**
+```json
+{
+  "status": "info",
+  "message": "Use POST /api/scrape/<supplier_name> to scrape a supplier",
+  "example": { ... },
+  "available_suppliers": ["greenshop", "delparque", ...]
+}
+```
+
+#### `GET /api/suppliers`
+Listar todos los proveedores disponibles (requiere autenticación).
+
+**Headers:** `Authorization: Bearer <API_KEY>`
+
+**Respuesta (200 OK):**
+```json
+{
+  "status": "success",
+  "suppliers": ["greenshop", "delparque", "distribuidora_pop", ...],
+  "count": 10
+}
+```
+
+#### `POST /api/scrape/<supplier_name>`
+Realizar scraping de un proveedor y extraer items.
+
+**Importante:** Este endpoint EXTRAE, BUSCA IDs en el backend y TRANSFORMA items pero NO los guarda. Solo devuelve los datos en JSON.
+
+**Parámetros:**
+- `supplier_name` (path): Nombre del proveedor (ej: `delparque`, `greenshop`)
+
+**Headers:** (Sin autenticación requerida)
+
+**Proceso:**
+1. Se conecta con el backend API
+2. Extrae productos del sitio del proveedor
+3. Para cada producto, busca su ID en el backend (fetch_product_id)
+4. Transforma los productos usando ItemBuilder (normalización, precios, cantidades, etc)
+5. Devuelve los items transformados en JSON SIN guardarlos en base de datos
+
+**Respuesta Exitosa (200 OK):**
+```json
+{
+  "status": "success",
+  "supplier": "delparque",
+  "supplier_id": 47,
+  "supplier_name": "Del Parque Bebidas",
+  "item_count": 42,
+  "items": [
+    {
+      "name": "Bebida 500ml",
+      "price": 150.50,
+      "brand": "Del Parque",
+      "description": "Bebida refrescante",
+      "image": "https://...",
+      "productId": 123,
+      "unit": "ML",
+      "quantity": 500,
+      "supplierId": 47
+    }
+  ]
+}
+```
+
+**Errores Posibles:**
+
+| Código | Situación |
+|--------|-----------|
+| 400 | Request inválido |
+| 401 | API key inválida o faltante |
+| 404 | Proveedor no existe |
+| 500 | Error durante scraping |
+
+---
 
 ## Troubleshooting
 

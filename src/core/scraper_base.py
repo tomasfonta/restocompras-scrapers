@@ -106,6 +106,46 @@ class ScraperBase(ABC):
 
         return final_products
 
+    def scrape_items_only(self) -> List[Dict[str, Any]]:
+        """
+        Scrape and extract items WITHOUT posting to API.
+        
+        Used by API endpoints that return items directly without persistence.
+        
+        Returns:
+            List of items ready for return (without API posting)
+        """
+        self.logger.info(f"Starting item extraction (no API posting) for {self.config['supplier_name']}")
+        
+        all_products = []
+        urls = self.get_urls()
+        
+        for url in urls:
+            self.logger.info(f"Scraping URL: {url}")
+            try:
+                # Get HTML using the appropriate strategy
+                html_content = self._fetch_html(url)
+                
+                # Extract products from HTML
+                products = self.extract_products(html_content, url)
+                all_products.extend(products)
+                
+                self.logger.info(f"Extracted {len(products)} products from {url}")
+            except Exception as e:
+                self.logger.error(f"Failed to scrape {url}: {e}", exc_info=True)
+                continue
+        
+        self.logger.info(f"Total products extracted: {len(all_products)}")
+        
+        # Process and deduplicate        
+        processed_products = self._process_products(all_products)
+        
+        # Build items using ItemBuilder without posting to API
+        items = self._build_items_only(processed_products)
+        
+        self.logger.info(f"Successfully built {len(items)} items for return")
+        return items
+
     @abstractmethod
     def _fetch_html(self, url: str) -> str:
         """
@@ -199,6 +239,53 @@ class ScraperBase(ABC):
             )
         
         return successful_products
+    
+    def _build_items_only(self, products: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Build items from products WITHOUT posting to API.
+        
+        Fetches product IDs from backend, builds items using ItemBuilder,
+        but does NOT post to API endpoint.
+        
+        Used for API endpoints that return items directly.
+        Items are included even if product ID is not found.
+        
+        Args:
+            products: Processed product list
+            
+        Returns:
+            List of built items ready for return (with or without productId)
+        """
+        self.logger.info(f"Building items from {len(products)} products (fetching IDs, no API posting)...")
+        
+        items = []
+        
+        for product in products:
+            product_name = product.get('name', 'Unknown Product')
+            
+            try:
+                # Fetch product ID from backend
+                product_id = self.api_client.fetch_product_id(product_name)
+                
+                if product_id is None:
+                    self.logger.warning(f"No product ID found for {product_name}, adding item without productId")
+                
+                # Build item using ItemBuilder with supplier-specific transformations
+                # Include item even if product_id is None
+                item = self.item_builder.build_item(product, product_id)
+                
+                if item is None:
+                    self.logger.warning(f"Failed to build item for {product_name}: ItemBuilder returned None")
+                    continue
+                
+                items.append(item)
+                
+            except Exception as e:
+                self.logger.error(f"Error building item for {product_name}: {e}")
+                continue
+        
+        self.logger.info(f"Successfully built {len(items)} items")
+        return items
     
     def get_supplier_id(self) -> int:
         """Get the supplier ID from configuration."""
